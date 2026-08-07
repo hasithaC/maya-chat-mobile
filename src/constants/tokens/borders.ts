@@ -1,0 +1,20 @@
+import {StyleSheet} from 'react-native';
+
+export const borderRadius = {
+  none: 0,
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  '2xl': 24,
+  full: 9999,
+} as const;
+
+export const borderWidth = {
+  none: 0,
+  hairline: StyleSheet.hairlineWidth,
+  thin: 1,
+  medium: 1.5,
+  thick: 2,
+} as const;
