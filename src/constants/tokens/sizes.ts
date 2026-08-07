@@ -1,0 +1,23 @@
+export const iconSize = {
+  xs: 12,
+  sm: 16,
+  md: 20,
+  lg: 24,
+  xl: 32,
+} as const;
+
+export const avatarSize = {
+  sm: 32,
+  md: 40,
+  lg: 56,
+  xl: 80,
+} as const;
+
+export const controlHeight = {
+  sm: 36,
+  md: 44,
+  lg: 52,
+} as const;
+
+// Apple HIG / Material minimum recommended touch target.
+export const minHitSlop = 44;

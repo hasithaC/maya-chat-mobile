@@ -1,14 +1,16 @@
 import {useState} from 'react';
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import {
+  KeyboardAwareScrollContainer,
+  SafeAreaContainer,
+} from '../../../components';
 import {useLoginWithOtp, useRequestOtp} from '../hooks/auth.hooks';
 import {useAuthStore} from '../store/auth.store';
 
@@ -45,94 +47,95 @@ export function SignInScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <Text style={styles.title}>Sign in</Text>
+    <SafeAreaContainer style={styles.container}>
+      <KeyboardAwareScrollContainer contentContainerStyle={styles.content}>
+        <Text style={styles.title}>Sign in</Text>
 
-      {!isOtpStep ? (
-        <View>
-          <Text style={styles.label}>Phone number</Text>
-          <TextInput
-            style={styles.input}
-            value={phoneInput}
-            onChangeText={setPhoneInput}
-            placeholder="+1 555 123 4567"
-            keyboardType="phone-pad"
-            autoComplete="tel"
-            editable={!requestOtp.isPending}
-          />
+        {!isOtpStep ? (
+          <View>
+            <Text style={styles.label}>Phone number</Text>
+            <TextInput
+              style={styles.input}
+              value={phoneInput}
+              onChangeText={setPhoneInput}
+              placeholder="+1 555 123 4567"
+              keyboardType="phone-pad"
+              autoComplete="tel"
+              editable={!requestOtp.isPending}
+            />
 
-          {requestOtp.isError ? (
-            <Text style={styles.error}>{requestOtp.error.message}</Text>
-          ) : null}
+            {requestOtp.isError ? (
+              <Text style={styles.error}>{requestOtp.error.message}</Text>
+            ) : null}
 
-          <Pressable
-            style={[
-              styles.button,
-              (requestOtp.isPending || !phoneInput.trim()) &&
-                styles.buttonDisabled,
-            ]}
-            onPress={handleSendOtp}
-            disabled={requestOtp.isPending || !phoneInput.trim()}>
-            {requestOtp.isPending ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>Send code</Text>
-            )}
-          </Pressable>
-        </View>
-      ) : (
-        <View>
-          <Text style={styles.label}>
-            Enter the code sent to {submittedPhoneNumber}
-          </Text>
-          <TextInput
-            style={styles.input}
-            value={otpInput}
-            onChangeText={setOtpInput}
-            placeholder="6-digit code"
-            keyboardType="number-pad"
-            maxLength={6}
-            editable={!loginWithOtp.isPending}
-          />
+            <Pressable
+              style={[
+                styles.button,
+                (requestOtp.isPending || !phoneInput.trim()) &&
+                  styles.buttonDisabled,
+              ]}
+              onPress={handleSendOtp}
+              disabled={requestOtp.isPending || !phoneInput.trim()}>
+              {requestOtp.isPending ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>Send code</Text>
+              )}
+            </Pressable>
+          </View>
+        ) : (
+          <View>
+            <Text style={styles.label}>
+              Enter the code sent to {submittedPhoneNumber}
+            </Text>
+            <TextInput
+              style={styles.input}
+              value={otpInput}
+              onChangeText={setOtpInput}
+              placeholder="6-digit code"
+              keyboardType="number-pad"
+              maxLength={6}
+              editable={!loginWithOtp.isPending}
+            />
 
-          {loginWithOtp.isError ? (
-            <Text style={styles.error}>{loginWithOtp.error.message}</Text>
-          ) : null}
+            {loginWithOtp.isError ? (
+              <Text style={styles.error}>{loginWithOtp.error.message}</Text>
+            ) : null}
 
-          <Pressable
-            style={[
-              styles.button,
-              (loginWithOtp.isPending || !otpInput.trim()) &&
-                styles.buttonDisabled,
-            ]}
-            onPress={handleVerify}
-            disabled={loginWithOtp.isPending || !otpInput.trim()}>
-            {loginWithOtp.isPending ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>Verify & sign in</Text>
-            )}
-          </Pressable>
+            <Pressable
+              style={[
+                styles.button,
+                (loginWithOtp.isPending || !otpInput.trim()) &&
+                  styles.buttonDisabled,
+              ]}
+              onPress={handleVerify}
+              disabled={loginWithOtp.isPending || !otpInput.trim()}>
+              {loginWithOtp.isPending ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>Verify & sign in</Text>
+              )}
+            </Pressable>
 
-          <Pressable
-            onPress={handleUseDifferentNumber}
-            style={styles.linkButton}>
-            <Text style={styles.linkText}>Use a different number</Text>
-          </Pressable>
-        </View>
-      )}
-    </KeyboardAvoidingView>
+            <Pressable
+              onPress={handleUseDifferentNumber}
+              style={styles.linkButton}>
+              <Text style={styles.linkText}>Use a different number</Text>
+            </Pressable>
+          </View>
+        )}
+      </KeyboardAwareScrollContainer>
+    </SafeAreaContainer>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    backgroundColor: '#fff',
+  },
+  content: {
     justifyContent: 'center',
     paddingHorizontal: 24,
-    backgroundColor: '#fff',
   },
   title: {
     fontSize: 28,
