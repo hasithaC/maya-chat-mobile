@@ -1,187 +1,320 @@
-import {useState} from 'react';
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import type { CountryCode } from "libphonenumber-js/mobile";
+import { isValidPhoneNumber } from "libphonenumber-js/mobile";
+import { useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Pressable,
+  Dimensions,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
-} from 'react-native';
+} from "react-native";
 import {
+  CountryCodeInput,
   KeyboardAwareScrollContainer,
+  PrimaryPressable,
+  PrimaryTextInput,
   SafeAreaContainer,
-} from '../../../components';
-import {useLoginWithOtp, useRequestOtp} from '../hooks/auth.hooks';
-import {useAuthStore} from '../store/auth.store';
+  SelectableOptionButton,
+} from "../../../components";
+import type { Country } from "../../../constants/data";
+import { defaultCountry } from "../../../constants/data";
+import {
+  borderWidth,
+  colors,
+  controlHeight,
+  deviceWidth,
+  fontSize,
+  iconSize,
+  lineHeight,
+  palette,
+  primaryFontFamily,
+  secondaryFontFamily,
+  spacing,
+  withAlpha,
+} from "../../../constants/tokens";
+import { EMAIL_REGEX } from "../constants";
+import { useRequestOtp } from "../hooks/auth.hooks";
+
+type OtpChannel = "mobile" | "email";
+
+const PAGE_WIDTH = deviceWidth - 2 * spacing.lg;
 
 export function SignInScreen() {
-  const status = useAuthStore(s => s.status);
-  const submittedPhoneNumber = useAuthStore(s => s.phoneNumber);
-  const setPhoneNumber = useAuthStore(s => s.setPhoneNumber);
-  const reset = useAuthStore(s => s.reset);
+  const router = useRouter();
 
-  const [phoneInput, setPhoneInput] = useState('');
-  const [otpInput, setOtpInput] = useState('');
+  const [channel, setChannel] = useState<OtpChannel>("mobile");
+  const [phoneInput, setPhoneInput] = useState("");
+  const [emailInput, setEmailInput] = useState("");
+  const [country, setCountry] = useState<Country>(defaultCountry);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const pagerRef = useRef<ScrollView>(null);
 
   const requestOtp = useRequestOtp();
-  const loginWithOtp = useLoginWithOtp();
 
-  const isOtpStep = status === 'otpSent';
-
-  const handleSendOtp = () => {
-    const phoneNumber = phoneInput.trim();
-    if (!phoneNumber) return;
-    setPhoneNumber(phoneNumber);
-    requestOtp.mutate({type: 'mobile', value: phoneNumber});
+  const goToChannel = (nextChannel: OtpChannel) => {
+    setChannel(nextChannel);
+    pagerRef.current?.scrollTo({
+      x: nextChannel === "mobile" ? 0 : PAGE_WIDTH,
+      animated: true,
+    });
   };
 
-  const handleVerify = () => {
-    const otp = otpInput.trim();
-    if (!submittedPhoneNumber || !otp) return;
-    loginWithOtp.mutate({phoneNumber: submittedPhoneNumber, otp});
+  const currentValue = channel === "mobile" ? phoneInput : emailInput;
+
+  const handleSendOtp = async () => {
+    const trimmed = currentValue.trim();
+
+    if (channel === "mobile") {
+      if (
+        !trimmed ||
+        !isValidPhoneNumber(trimmed, country.iso2 as CountryCode)
+      ) {
+        setPhoneError(`Enter a valid mobile number for ${country.name}`);
+        return;
+      }
+      setPhoneError(null);
+    } else {
+      if (!trimmed || !EMAIL_REGEX.test(trimmed)) {
+        setEmailError("Enter a valid email address");
+        return;
+      }
+      setEmailError(null);
+    }
+
+    const value =
+      channel === "mobile" ? `${country.dialCode}${trimmed}` : trimmed;
+
+    try {
+      const response = await requestOtp.mutateAsync({ type: channel, value });
+
+      if (response.isNewUser) {
+        const message =
+          response.message ||
+          `No account found for this ${channel === "mobile" ? "mobile number" : "email address"}.`;
+        if (channel === "mobile") {
+          setPhoneError(message);
+        } else {
+          setEmailError(message);
+        }
+        return;
+      }
+
+      router.push({
+        pathname: "/(auth)/otp",
+        params: { identifier: value, identifierType: channel },
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to send OTP";
+      if (channel === "mobile") {
+        setPhoneError(message);
+      } else {
+        setEmailError(message);
+      }
+    }
   };
 
-  const handleUseDifferentNumber = () => {
-    setOtpInput('');
-    reset();
+  const handlePhoneChange = (text: string) => {
+    setPhoneInput(text);
+    if (phoneError) setPhoneError(null);
+  };
+
+  const handleEmailChange = (text: string) => {
+    setEmailInput(text);
+    if (emailError) setEmailError(null);
   };
 
   return (
-    <SafeAreaContainer style={styles.container}>
-      <KeyboardAwareScrollContainer contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Sign in</Text>
-
-        {!isOtpStep ? (
+    <View style={styles.screen}>
+      <SafeAreaContainer>
+        <View style={styles.header}>
           <View>
-            <Text style={styles.label}>Phone number</Text>
-            <TextInput
-              style={styles.input}
-              value={phoneInput}
-              onChangeText={setPhoneInput}
-              placeholder="+1 555 123 4567"
-              keyboardType="phone-pad"
-              autoComplete="tel"
-              editable={!requestOtp.isPending}
-            />
-
-            {requestOtp.isError ? (
-              <Text style={styles.error}>{requestOtp.error.message}</Text>
-            ) : null}
-
-            <Pressable
-              style={[
-                styles.button,
-                (requestOtp.isPending || !phoneInput.trim()) &&
-                  styles.buttonDisabled,
-              ]}
-              onPress={handleSendOtp}
-              disabled={requestOtp.isPending || !phoneInput.trim()}>
-              {requestOtp.isPending ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.buttonText}>Send code</Text>
-              )}
-            </Pressable>
-          </View>
-        ) : (
-          <View>
-            <Text style={styles.label}>
-              Enter the code sent to {submittedPhoneNumber}
+            <Text style={styles.heading}>
+              <Text style={styles.headingMuted}>Welcome Back!</Text>
+              <Text>,</Text>
             </Text>
-            <TextInput
-              style={styles.input}
-              value={otpInput}
-              onChangeText={setOtpInput}
-              placeholder="6-digit code"
-              keyboardType="number-pad"
-              maxLength={6}
-              editable={!loginWithOtp.isPending}
-            />
-
-            {loginWithOtp.isError ? (
-              <Text style={styles.error}>{loginWithOtp.error.message}</Text>
-            ) : null}
-
-            <Pressable
-              style={[
-                styles.button,
-                (loginWithOtp.isPending || !otpInput.trim()) &&
-                  styles.buttonDisabled,
-              ]}
-              onPress={handleVerify}
-              disabled={loginWithOtp.isPending || !otpInput.trim()}>
-              {loginWithOtp.isPending ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.buttonText}>Verify & sign in</Text>
-              )}
-            </Pressable>
-
-            <Pressable
-              onPress={handleUseDifferentNumber}
-              style={styles.linkButton}>
-              <Text style={styles.linkText}>Use a different number</Text>
-            </Pressable>
+            <Text style={styles.heading}>Sign In Here.</Text>
           </View>
-        )}
-      </KeyboardAwareScrollContainer>
-    </SafeAreaContainer>
+
+          <KeyboardAwareScrollContainer
+            contentContainerStyle={styles.scrollContent}
+          >
+            <View style={styles.optionsWrapper}>
+              <View style={styles.dividerRow}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>
+                  Use Below Options to Sign In
+                </Text>
+
+                <View style={styles.dividerLine} />
+              </View>
+
+              <View style={styles.optionsGroup}>
+                <View style={styles.channelRow}>
+                  <SelectableOptionButton
+                    label="Mobile Number"
+                    selected={channel === "mobile"}
+                    onPress={() => goToChannel("mobile")}
+                  />
+
+                  <SelectableOptionButton
+                    label="Email"
+                    selected={channel === "email"}
+                    onPress={() => goToChannel("email")}
+                  />
+                </View>
+
+                <View style={styles.pagerContainer}>
+                  <ScrollView
+                    scrollEnabled={false}
+                    ref={pagerRef}
+                    horizontal
+                    pagingEnabled
+                    showsHorizontalScrollIndicator={false}
+                  >
+                    <View style={styles.pagerContainer}>
+                      <View style={styles.phoneRow}>
+                        <CountryCodeInput
+                          country={country}
+                          onChange={setCountry}
+                        />
+                        <View style={styles.phoneInputWrapper}>
+                          <PrimaryTextInput
+                            placeholder="Mobile number"
+                            keyboardType="phone-pad"
+                            value={phoneInput}
+                            onChangeText={handlePhoneChange}
+                            error={phoneError}
+                          />
+                        </View>
+                      </View>
+                    </View>
+                    <View style={styles.pagerContainer}>
+                      <PrimaryTextInput
+                        placeholder="Email address"
+                        keyboardType="email-address"
+                        value={emailInput}
+                        onChangeText={handleEmailChange}
+                        error={emailError}
+                      />
+                    </View>
+                  </ScrollView>
+                </View>
+                <View style={styles.separator} />
+                <PrimaryPressable text="Continue" onPress={handleSendOtp} />
+
+                <View style={styles.footer}>
+                  <Text style={styles.footerText}>
+                    Don’t Have an Account?{" "}
+                    <Text
+                      style={styles.footerLink}
+                      onPress={() => router.push("/(auth)/sign-up")}
+                    >
+                      Sign Up
+                    </Text>
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </KeyboardAwareScrollContainer>
+        </View>
+      </SafeAreaContainer>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#fff',
+  screen: {
+    flex: 1,
+    width: "100%",
+    backgroundColor: colors.backgroundPrimary,
   },
-  content: {
-    justifyContent: 'center',
-    paddingHorizontal: 24,
+  pagerContainer: {
+    width: PAGE_WIDTH,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 32,
+  header: {
+    flex: 1,
+    width: "100%",
+    gap: spacing.lg,
+    padding: spacing.lg,
   },
-  label: {
-    fontSize: 14,
-    color: '#374151',
-    marginBottom: 8,
+  heading: {
+    fontFamily: primaryFontFamily.bold,
+    fontSize: fontSize["3xl"],
+    lineHeight: lineHeight["3xl"],
+    color: colors.textPrimary,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
-    marginBottom: 12,
+  headingMuted: {
+    color: colors.textSecondary,
   },
-  error: {
-    color: '#dc2626',
-    fontSize: 13,
-    marginBottom: 12,
+  scrollContent: {
+    justifyContent: "flex-end",
   },
-  button: {
-    backgroundColor: '#111827',
-    borderRadius: 8,
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
+  optionsWrapper: {
+    gap: spacing.lg,
+    width: "100%",
+    alignItems: "center",
+    backgroundColor: colors.backgroundPrimary,
   },
-  buttonDisabled: {
-    opacity: 0.5,
+  dividerRow: {
+    gap: spacing["2xl"],
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+  dividerLine: {
+    flex: 1,
+    height: borderWidth.thin,
+    backgroundColor: colors.border,
   },
-  linkButton: {
-    marginTop: 16,
-    alignItems: 'center',
+  dividerText: {
+    fontFamily: secondaryFontFamily.regular,
+    fontSize: fontSize.xs,
+    lineHeight: lineHeight.xs,
+    color: colors.textPrimary,
+    textAlign: "center",
   },
-  linkText: {
-    color: '#2563eb',
-    fontSize: 14,
+  optionsGroup: {
+    gap: spacing.lg,
+    width: "100%",
+  },
+  channelRow: {
+    width: "100%",
+    gap: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  phoneRow: {
+    width: "100%",
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  phoneInputWrapper: {
+    flex: 1,
+  },
+  separator: {
+    width: "100%",
+    height: borderWidth.thin,
+    backgroundColor: colors.border,
+  },
+  footer: {
+    width: "100%",
+    alignItems: "center",
+  },
+  footerText: {
+    fontFamily: primaryFontFamily.regular,
+    fontSize: fontSize.xs,
+    lineHeight: lineHeight.xs,
+    color: colors.textSecondary,
+  },
+  footerLink: {
+    color: colors.textLink,
   },
 });

@@ -3,33 +3,37 @@ import {tokenManager} from '../../../core/auth/token-manager';
 import {authApi} from '../api/auth.api';
 import {useAuthStore} from '../store/auth.store';
 import type {
-  LoginWithOtpPayload,
+  LoginWithOTPRequest,
   RequestOTPRequest,
   SignUpPayload,
-  VerifyOtpPayload,
+  VerifyOTPRequest,
 } from '../types/auth.types';
 
-export const useRequestOtp = () => {
-  const markOtpSent = useAuthStore(s => s.markOtpSent);
+export const useRequestOtp = () =>
+  useMutation({
+    mutationFn: (payload: RequestOTPRequest) => authApi.requestOtp(payload),
+  });
+
+export const useVerifyOtp = () => {
+  const setVerifyToken = useAuthStore(s => s.setVerifyToken);
 
   return useMutation({
-    mutationFn: (payload: RequestOTPRequest) => authApi.requestOtp(payload),
-    onSuccess: () => markOtpSent(),
+    mutationFn: (payload: VerifyOTPRequest) => authApi.verifyOtp(payload),
+    onSuccess: response => {
+      setVerifyToken(response.verifyToken);
+    },
   });
 };
 
-export const useVerifyOtp = () =>
-  useMutation({
-    mutationFn: (payload: VerifyOtpPayload) => authApi.verifyOtp(payload),
-  });
-
 export const useLoginWithOtp = () => {
   const setAuthenticated = useAuthStore(s => s.setAuthenticated);
+  const setUser = useAuthStore(s => s.setUser);
 
   return useMutation({
-    mutationFn: (payload: LoginWithOtpPayload) => authApi.loginWithOtp(payload),
+    mutationFn: (payload: LoginWithOTPRequest) => authApi.loginWithOtp(payload),
     onSuccess: async response => {
       await tokenManager.setTokens(response);
+      setUser(response.user);
       setAuthenticated(true);
     },
   });

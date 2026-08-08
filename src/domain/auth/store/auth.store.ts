@@ -2,27 +2,25 @@ import {create} from 'zustand';
 import {logger} from '../../../core/store/logger';
 import {queryClient} from '../../../core/query/query-client';
 import {tokenManager} from '../../../core/auth/token-manager';
-
-export type AuthStatus = 'idle' | 'otpSent' | 'authenticated';
+import type {User} from '../types/auth.types';
 
 interface AuthState {
   // ── State ──
-  status: AuthStatus;
-  phoneNumber: string | null;
   isAuthenticated: boolean;
+  user: User | null;
+  verifyToken: string | null;
 
   // ── Actions ──
-  setPhoneNumber: (phoneNumber: string) => void;
-  markOtpSent: () => void;
   setAuthenticated: (isAuthenticated: boolean) => void;
+  setUser: (user: User) => void;
+  setVerifyToken: (verifyToken: string | null) => void;
   logout: () => Promise<void>;
-  reset: () => void;
 }
 
 const initialState = {
-  status: 'idle' as AuthStatus,
-  phoneNumber: null as string | null,
   isAuthenticated: false,
+  user: null as User | null,
+  verifyToken: null as string | null,
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -30,23 +28,17 @@ export const useAuthStore = create<AuthState>()(
     set => ({
       ...initialState,
 
-      setPhoneNumber: phoneNumber => set({phoneNumber}),
+      setAuthenticated: isAuthenticated => set({isAuthenticated}),
 
-      markOtpSent: () => set({status: 'otpSent'}),
+      setUser: user => set({user}),
 
-      setAuthenticated: isAuthenticated =>
-        set({
-          isAuthenticated,
-          status: isAuthenticated ? 'authenticated' : 'idle',
-        }),
+      setVerifyToken: verifyToken => set({verifyToken}),
 
       logout: async () => {
         await tokenManager.clearTokens();
         queryClient.clear();
         set({...initialState});
       },
-
-      reset: () => set({...initialState}),
     }),
     'AuthStore',
   ),

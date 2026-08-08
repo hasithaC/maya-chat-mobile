@@ -1,11 +1,13 @@
 import {apiClient} from '../../../core/api/api-client';
 import type {
   AuthResponse,
-  LoginWithOtpPayload,
+  LoginWithOTPRequest,
+  LoginWithOTPResponse,
   RequestOTPRequest,
   RequestOTPResponse,
   SignUpPayload,
-  VerifyOtpPayload,
+  VerifyOTPRequest,
+  VerifyOTPResponse,
 } from '../types/auth.types';
 
 const ENDPOINTS = {
@@ -21,12 +23,14 @@ export const authApi = {
       .post<RequestOTPResponse>(ENDPOINTS.REQUEST_OTP, payload)
       .then(res => res.data),
 
-  verifyOtp: (payload: VerifyOtpPayload) =>
-    apiClient.post<void>(ENDPOINTS.VERIFY_OTP, payload).then(res => res.data),
-
-  loginWithOtp: (payload: LoginWithOtpPayload) =>
+  verifyOtp: (payload: VerifyOTPRequest) =>
     apiClient
-      .post<AuthResponse>(ENDPOINTS.LOGIN_WITH_OTP, payload)
+      .post<VerifyOTPResponse>(ENDPOINTS.VERIFY_OTP, payload)
+      .then(res => res.data),
+
+  loginWithOtp: (payload: LoginWithOTPRequest) =>
+    apiClient
+      .post<LoginWithOTPResponse>(ENDPOINTS.LOGIN_WITH_OTP, payload)
       .then(res => res.data),
 
   signUp: (payload: SignUpPayload) =>

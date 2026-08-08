@@ -1,9 +1,17 @@
-export const fontFamily = {
+export const primaryFontFamily = {
   regular: 'Manrope_400Regular',
   medium: 'Manrope_500Medium',
   semiBold: 'Manrope_600SemiBold',
   bold: 'Manrope_700Bold',
   extraBold: 'Manrope_800ExtraBold',
+} as const;
+
+export const secondaryFontFamily = {
+  regular: 'Geist_400Regular',
+  medium: 'Geist_500Medium',
+  semiBold: 'Geist_600SemiBold',
+  bold: 'Geist_700Bold',
+  extraBold: 'Geist_800ExtraBold',
 } as const;
 
 export const fontSize = {

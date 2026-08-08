@@ -1,3 +1,9 @@
+import { Dimensions } from 'react-native';
+
+const { width: deviceWidth, height: deviceHeight } = Dimensions.get('window');
+
+export { deviceWidth, deviceHeight };
+
 export const iconSize = {
   xs: 12,
   sm: 16,
