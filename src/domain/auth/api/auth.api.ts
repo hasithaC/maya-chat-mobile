@@ -1,7 +1,8 @@
 import {apiClient} from '../../../core/api/api-client';
 import type {
   AuthResponse,
-  LoginWithOtpPayload,
+  LoginWithOTPRequest,
+  LoginWithOTPResponse,
   RequestOTPRequest,
   RequestOTPResponse,
   SignUpPayload,
@@ -24,9 +25,9 @@ export const authApi = {
   verifyOtp: (payload: VerifyOtpPayload) =>
     apiClient.post<void>(ENDPOINTS.VERIFY_OTP, payload).then(res => res.data),
 
-  loginWithOtp: (payload: LoginWithOtpPayload) =>
+  loginWithOtp: (payload: LoginWithOTPRequest) =>
     apiClient
-      .post<AuthResponse>(ENDPOINTS.LOGIN_WITH_OTP, payload)
+      .post<LoginWithOTPResponse>(ENDPOINTS.LOGIN_WITH_OTP, payload)
       .then(res => res.data),
 
   signUp: (payload: SignUpPayload) =>

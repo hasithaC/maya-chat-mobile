@@ -13,9 +13,19 @@ export interface VerifyOtpPayload {
   otp: string;
 }
 
-export interface LoginWithOtpPayload {
-  phoneNumber: string;
+export interface LoginWithOTPRequest {
+  type: 'mobile' | 'email';
+  value: string;
   otp: string;
+}
+
+export interface LoginWithOTPResponse {
+  accessToken: string;
+  refreshToken: string;
+  accessTokenExpiresIn: string;
+  refreshTokenExpiresIn: string;
+  message: string;
+  user: User;
 }
 
 export interface SignUpPayload {
@@ -28,12 +38,24 @@ export interface AuthTokens {
   refreshToken: string;
 }
 
-export interface AuthUser {
+export interface User {
   id: string;
-  phoneNumber: string;
-  name?: string;
+  email: string;
+  fullName: string;
+  avatar: any;
+  voiceUrl: any;
+  phone: any;
+  identity: any;
+  persona: any;
+  isActive: boolean;
+  isEmailVerified: boolean;
+  isPhoneVerified: boolean;
+  emailVerifiedAt: string;
+  phoneVerifiedAt: any;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type AuthResponse = AuthTokens & {
-  user?: AuthUser;
+  user?: User;
 };

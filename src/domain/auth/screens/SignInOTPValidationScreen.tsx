@@ -22,17 +22,16 @@ import {
 } from "../../../constants/tokens";
 import { OTP_LENGTH, OTP_RESEND_INTERVAL_SECONDS } from "../constants";
 import { useLoginWithOtp, useRequestOtp } from "../hooks/auth.hooks";
+import { router } from "expo-router";
 
 interface SignInOTPValidationScreenProps {
   identifier: string;
   identifierType: "mobile" | "email";
-  onUseDifferentIdentifier: () => void;
 }
 
 export function SignInOTPValidationScreen({
   identifier,
   identifierType,
-  onUseDifferentIdentifier,
 }: SignInOTPValidationScreenProps) {
   const intervalIdRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [remainingSeconds, setRemainingSeconds] = useState(
@@ -90,7 +89,11 @@ export function SignInOTPValidationScreen({
 
   const handleVerify = async () => {
     try {
-      await loginWithOtp.mutateAsync({ phoneNumber: identifier, otp });
+      await loginWithOtp.mutateAsync({
+        type: identifierType,
+        value: identifier,
+        otp,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to verify OTP");
     }
@@ -125,7 +128,11 @@ export function SignInOTPValidationScreen({
 
                   <View style={styles.identifierPill}>
                     <HugeiconsIcon
-                      icon={identifierType === "email" ? Mail01Icon : SmartPhone01Icon}
+                      icon={
+                        identifierType === "email"
+                          ? Mail01Icon
+                          : SmartPhone01Icon
+                      }
                       size={iconSize.xs}
                       color={colors.textSecondary}
                     />
@@ -141,7 +148,8 @@ export function SignInOTPValidationScreen({
                     pinCodeContainerStyle: styles.otpPinCodeContainer,
                     pinCodeTextStyle: styles.otpPinCodeText,
                     focusStickStyle: styles.otpFocusStick,
-                    focusedPinCodeContainerStyle: styles.otpActivePinCodeContainer,
+                    focusedPinCodeContainerStyle:
+                      styles.otpActivePinCodeContainer,
                   }}
                 />
 
@@ -159,8 +167,10 @@ export function SignInOTPValidationScreen({
                     </>
                   ) : (
                     <>
-                      <Text style={styles.resendLabel}>Resend code in</Text>
-                      <Text style={styles.resendTimer}>{`${minutes}:${seconds}`}</Text>
+                      <Text style={styles.resendLabel}>Resend code in </Text>
+                      <Text
+                        style={styles.resendTimer}
+                      >{`${minutes}:${seconds}`}</Text>
                     </>
                   )}
                 </View>
@@ -175,7 +185,12 @@ export function SignInOTPValidationScreen({
               <View style={styles.footer}>
                 <Text style={styles.footerText}>
                   Wrong {identifierLabel}?{" "}
-                  <Text style={styles.footerLink} onPress={onUseDifferentIdentifier}>
+                  <Text
+                    style={styles.footerLink}
+                    onPress={() => {
+                      router.back();
+                    }}
+                  >
                     Use a different one
                   </Text>
                 </Text>
@@ -240,15 +255,15 @@ const styles = StyleSheet.create({
   identifierPill: {
     flexDirection: "row",
     gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-    height: controlHeight.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
     borderRadius: borderRadius.xl,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: colors.backgroundSecondary,
   },
   identifierPillText: {
-    fontFamily: primaryFontFamily.medium,
+    fontFamily: primaryFontFamily.regular,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.sm,
     color: colors.textSecondary,

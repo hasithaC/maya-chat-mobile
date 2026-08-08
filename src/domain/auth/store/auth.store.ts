@@ -2,18 +2,22 @@ import {create} from 'zustand';
 import {logger} from '../../../core/store/logger';
 import {queryClient} from '../../../core/query/query-client';
 import {tokenManager} from '../../../core/auth/token-manager';
+import type {User} from '../types/auth.types';
 
 interface AuthState {
   // ── State ──
   isAuthenticated: boolean;
+  user: User | null;
 
   // ── Actions ──
   setAuthenticated: (isAuthenticated: boolean) => void;
+  setUser: (user: User) => void;
   logout: () => Promise<void>;
 }
 
 const initialState = {
   isAuthenticated: false,
+  user: null as User | null,
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -22,6 +26,8 @@ export const useAuthStore = create<AuthState>()(
       ...initialState,
 
       setAuthenticated: isAuthenticated => set({isAuthenticated}),
+
+      setUser: user => set({user}),
 
       logout: async () => {
         await tokenManager.clearTokens();

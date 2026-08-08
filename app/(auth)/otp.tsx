@@ -3,7 +3,7 @@ import {SignInOTPValidationScreen} from '../../src/domain/auth/screens/SignInOTP
 
 export default function OtpRoute() {
   const router = useRouter();
-  const {identifier, identifierType} = useLocalSearchParams<{
+  const {identifier = '', identifierType = 'email'} = useLocalSearchParams<{
     identifier: string;
     identifierType: 'mobile' | 'email';
   }>();
@@ -12,7 +12,6 @@ export default function OtpRoute() {
     <SignInOTPValidationScreen
       identifier={identifier}
       identifierType={identifierType}
-      onUseDifferentIdentifier={() => router.back()}
     />
   );
 }
