@@ -211,7 +211,10 @@ export function SignInScreen() {
                 <View style={styles.footer}>
                   <Text style={styles.footerText}>
                     Don’t Have an Account?{" "}
-                    <Text style={styles.footerLink} onPress={() => {}}>
+                    <Text
+                      style={styles.footerLink}
+                      onPress={() => router.push("/(auth)/sign-up")}
+                    >
                       Sign Up
                     </Text>
                   </Text>
