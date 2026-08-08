@@ -6,7 +6,7 @@ import type {
   LoginWithOTPRequest,
   RequestOTPRequest,
   SignUpPayload,
-  VerifyOtpPayload,
+  VerifyOTPRequest,
 } from '../types/auth.types';
 
 export const useRequestOtp = () =>
@@ -14,10 +14,16 @@ export const useRequestOtp = () =>
     mutationFn: (payload: RequestOTPRequest) => authApi.requestOtp(payload),
   });
 
-export const useVerifyOtp = () =>
-  useMutation({
-    mutationFn: (payload: VerifyOtpPayload) => authApi.verifyOtp(payload),
+export const useVerifyOtp = () => {
+  const setVerifyToken = useAuthStore(s => s.setVerifyToken);
+
+  return useMutation({
+    mutationFn: (payload: VerifyOTPRequest) => authApi.verifyOtp(payload),
+    onSuccess: response => {
+      setVerifyToken(response.verifyToken);
+    },
   });
+};
 
 export const useLoginWithOtp = () => {
   const setAuthenticated = useAuthStore(s => s.setAuthenticated);

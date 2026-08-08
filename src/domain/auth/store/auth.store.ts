@@ -8,16 +8,19 @@ interface AuthState {
   // ── State ──
   isAuthenticated: boolean;
   user: User | null;
+  verifyToken: string | null;
 
   // ── Actions ──
   setAuthenticated: (isAuthenticated: boolean) => void;
   setUser: (user: User) => void;
+  setVerifyToken: (verifyToken: string | null) => void;
   logout: () => Promise<void>;
 }
 
 const initialState = {
   isAuthenticated: false,
   user: null as User | null,
+  verifyToken: null as string | null,
 };
 
 export const useAuthStore = create<AuthState>()(
@@ -28,6 +31,8 @@ export const useAuthStore = create<AuthState>()(
       setAuthenticated: isAuthenticated => set({isAuthenticated}),
 
       setUser: user => set({user}),
+
+      setVerifyToken: verifyToken => set({verifyToken}),
 
       logout: async () => {
         await tokenManager.clearTokens();

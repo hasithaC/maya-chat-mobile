@@ -49,14 +49,21 @@ export function SignUpScreen() {
     const value = `${country.dialCode}${trimmed}`;
 
     try {
-      await requestOtp.mutateAsync({ type: "mobile", value });
+      const response = await requestOtp.mutateAsync({ type: "mobile", value });
 
-      router.push({
-        pathname: "/(auth)/otp",
-        params: { identifier: value, identifierType: "mobile" },
-      });
+      if (response.isNewUser) {
+        router.push({
+          pathname: "/(auth)/sign-up-otp",
+          params: { identifier: value, identifierType: "mobile" },
+        });
+      } else {
+        router.push({
+          pathname: "/(auth)/otp",
+          params: { identifier: value, identifierType: "mobile" },
+        });
+      }
     } catch (err) {
-    setPhoneError(err instanceof Error ? err.message : "Failed to send OTP");
+      setPhoneError(err instanceof Error ? err.message : "Failed to send OTP");
     }
   };
 

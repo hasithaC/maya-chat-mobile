@@ -8,9 +8,15 @@ export interface RequestOTPResponse {
   isNewUser: boolean;
 }
 
-export interface VerifyOtpPayload {
-  phoneNumber: string;
+export interface VerifyOTPRequest {
+  type: 'mobile' | 'email';
+  value: string;
   otp: string;
+}
+
+export interface VerifyOTPResponse {
+  message: string;
+  verifyToken: string;
 }
 
 export interface LoginWithOTPRequest {
