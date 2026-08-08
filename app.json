@@ -3,6 +3,7 @@
     "name": "maya-chat-mobile",
     "slug": "maya-chat-mobile",
     "version": "1.0.0",
+    "scheme": "mayachat",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -27,7 +28,8 @@
     "plugins": [
       "expo-asset",
       "expo-secure-store",
-      "expo-font"
+      "expo-font",
+      "expo-router"
     ]
   }
 }

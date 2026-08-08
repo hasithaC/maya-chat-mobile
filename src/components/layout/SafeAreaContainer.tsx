@@ -1,8 +1,8 @@
-import type {PropsWithChildren} from 'react';
-import type {StyleProp, ViewStyle} from 'react-native';
-import {StyleSheet} from 'react-native';
-import type {Edge} from 'react-native-safe-area-context';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import type { PropsWithChildren } from "react";
+import type { StyleProp, ViewStyle } from "react-native";
+import { StyleSheet } from "react-native";
+import type { Edge } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface SafeAreaContainerProps extends PropsWithChildren {
   style?: StyleProp<ViewStyle>;
@@ -12,7 +12,7 @@ interface SafeAreaContainerProps extends PropsWithChildren {
 export function SafeAreaContainer({
   children,
   style,
-  edges = ['top', 'bottom'],
+  edges = ["top", "bottom", "left", "right"],
 }: SafeAreaContainerProps) {
   return (
     <SafeAreaView style={[styles.container, style]} edges={edges}>

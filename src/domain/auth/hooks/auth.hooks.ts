@@ -9,14 +9,10 @@ import type {
   VerifyOtpPayload,
 } from '../types/auth.types';
 
-export const useRequestOtp = () => {
-  const markOtpSent = useAuthStore(s => s.markOtpSent);
-
-  return useMutation({
+export const useRequestOtp = () =>
+  useMutation({
     mutationFn: (payload: RequestOTPRequest) => authApi.requestOtp(payload),
-    onSuccess: () => markOtpSent(),
   });
-};
 
 export const useVerifyOtp = () =>
   useMutation({
