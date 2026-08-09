@@ -17,9 +17,10 @@ import {QueryClientProvider} from '@tanstack/react-query';
 import {Stack} from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import {StatusBar} from 'expo-status-bar';
-import {useEffect} from 'react';
+import {useEffect, useState} from 'react';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {authEvents} from '../src/core/auth/auth-events';
+import {tokenManager} from '../src/core/auth/token-manager';
 import {queryClient} from '../src/core/query/query-client';
 import {useAuthStore} from '../src/domain/auth/store/auth.store';
 
@@ -46,14 +47,23 @@ export default function RootLayout() {
     Geist_700Bold,
     Geist_800ExtraBold,
   });
+  const [isHydrated, setIsHydrated] = useState(false);
+  const setAccessToken = useAuthStore(s => s.setAccessToken);
+  const setAuthenticated = useAuthStore(s => s.setAuthenticated);
 
   useEffect(() => {
-    if (fontsLoaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded]);
+    if (!fontsLoaded) return;
 
-  if (!fontsLoaded) {
+    (async () => {
+      const accessToken = await tokenManager.getAccessToken();
+      setAccessToken(accessToken);
+      setAuthenticated(Boolean(accessToken));
+      setIsHydrated(true);
+      await SplashScreen.hideAsync();
+    })();
+  }, [fontsLoaded, setAccessToken, setAuthenticated]);
+
+  if (!fontsLoaded || !isHydrated) {
     return null;
   }
 

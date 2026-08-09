@@ -27,12 +27,14 @@ export const useVerifyOtp = () => {
 
 export const useLoginWithOtp = () => {
   const setAuthenticated = useAuthStore(s => s.setAuthenticated);
+  const setAccessToken = useAuthStore(s => s.setAccessToken);
   const setUser = useAuthStore(s => s.setUser);
 
   return useMutation({
     mutationFn: (payload: LoginWithOTPRequest) => authApi.loginWithOtp(payload),
     onSuccess: async response => {
       await tokenManager.setTokens(response);
+      setAccessToken(response.accessToken);
       setUser(response.user);
       setAuthenticated(true);
     },
@@ -41,11 +43,13 @@ export const useLoginWithOtp = () => {
 
 export const useSignUp = () => {
   const setAuthenticated = useAuthStore(s => s.setAuthenticated);
+  const setAccessToken = useAuthStore(s => s.setAccessToken);
 
   return useMutation({
     mutationFn: (payload: SignUpPayload) => authApi.signUp(payload),
     onSuccess: async response => {
       await tokenManager.setTokens(response);
+      setAccessToken(response.accessToken);
       setAuthenticated(true);
     },
   });
