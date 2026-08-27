@@ -1,6 +1,6 @@
 import {StyleSheet, Text, View} from 'react-native';
 import {SafeAreaContainer} from '../../../src/components';
-import {colors, fontSize, lineHeight, primaryFontFamily} from '../../../src/constants/tokens';
+import {colors, fontSize, lineHeight, manrope} from '../../../src/constants/tokens';
 
 export default function RemindScreen() {
   return (
@@ -20,7 +20,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundPrimary,
   },
   text: {
-    fontFamily: primaryFontFamily.bold,
+    fontFamily: manrope.bold,
     fontSize: fontSize['2xl'],
     lineHeight: lineHeight['2xl'],
     color: colors.textPrimary,

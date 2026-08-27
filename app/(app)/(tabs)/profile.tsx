@@ -5,7 +5,7 @@ import {
   colors,
   fontSize,
   lineHeight,
-  primaryFontFamily,
+  manrope,
   spacing,
 } from '../../../src/constants/tokens';
 import {useAuthStore} from '../../../src/domain/auth/store/auth.store';
@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundPrimary,
   },
   text: {
-    fontFamily: primaryFontFamily.bold,
+    fontFamily: manrope.bold,
     fontSize: fontSize['2xl'],
     lineHeight: lineHeight['2xl'],
     color: colors.textPrimary,
@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.full,
   },
   signOutText: {
-    fontFamily: primaryFontFamily.medium,
+    fontFamily: manrope.medium,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.sm,
     color: colors.textInverse,

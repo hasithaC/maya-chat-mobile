@@ -8,7 +8,7 @@ import {
   colors,
   fontSize,
   lineHeight,
-  primaryFontFamily,
+  manrope,
   spacing,
 } from "../../constants/tokens";
 
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   label: {
-    fontFamily: primaryFontFamily.medium,
+    fontFamily: manrope.medium,
     lineHeight: lineHeight.xs,
     fontSize: fontSize.xs,
     color: colors.textPrimary,

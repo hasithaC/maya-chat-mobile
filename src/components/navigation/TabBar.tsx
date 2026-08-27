@@ -18,7 +18,7 @@ import {
   fontSize,
   iconSize,
   lineHeight,
-  primaryFontFamily,
+  manrope,
   shadows,
   spacing,
 } from "../../constants/tokens";
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   label: {
-    fontFamily: primaryFontFamily.medium,
+    fontFamily: manrope.medium,
     fontSize: fontSize.xs,
     lineHeight: lineHeight.xs,
     color: colors.textSecondary,

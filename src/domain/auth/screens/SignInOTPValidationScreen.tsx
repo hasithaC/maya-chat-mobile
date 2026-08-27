@@ -16,7 +16,7 @@ import {
   fontSize,
   iconSize,
   lineHeight,
-  primaryFontFamily,
+  manrope,
   spacing,
   withAlpha,
 } from "../../../constants/tokens";
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   heading: {
-    fontFamily: primaryFontFamily.bold,
+    fontFamily: manrope.bold,
     fontSize: fontSize["3xl"],
     lineHeight: lineHeight["3xl"],
     color: colors.textPrimary,
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   helperText: {
-    fontFamily: primaryFontFamily.regular,
+    fontFamily: manrope.regular,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.sm,
     color: colors.textPrimary,
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundSecondary,
   },
   identifierPillText: {
-    fontFamily: primaryFontFamily.regular,
+    fontFamily: manrope.regular,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.sm,
     color: colors.textSecondary,
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
   otpPinCodeText: {
     fontSize: fontSize.xl,
     color: colors.textPrimary,
-    fontFamily: primaryFontFamily.regular,
+    fontFamily: manrope.regular,
     lineHeight: lineHeight.xl,
   },
   otpFocusStick: {
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
     borderColor: colors.borderAccent,
   },
   errorText: {
-    fontFamily: primaryFontFamily.regular,
+    fontFamily: manrope.regular,
     fontSize: fontSize.xs,
     lineHeight: lineHeight.xs,
     color: colors.error,
@@ -303,19 +303,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   resendLabel: {
-    fontFamily: primaryFontFamily.regular,
+    fontFamily: manrope.regular,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.sm,
     color: colors.textSecondary,
   },
   resendAction: {
-    fontFamily: primaryFontFamily.bold,
+    fontFamily: manrope.bold,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.sm,
     color: colors.textLink,
   },
   resendTimer: {
-    fontFamily: primaryFontFamily.bold,
+    fontFamily: manrope.bold,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.sm,
     color: colors.textLink,
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   footerText: {
-    fontFamily: primaryFontFamily.regular,
+    fontFamily: manrope.regular,
     fontSize: fontSize.xs,
     lineHeight: lineHeight.xs,
     color: colors.textSecondary,

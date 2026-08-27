@@ -12,7 +12,7 @@ import {
   fontSize,
   iconSize,
   lineHeight,
-  primaryFontFamily,
+  manrope,
   spacing,
   withAlpha,
 } from "../../constants/tokens";
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
     lineHeight: lineHeight.base,
   },
   dialCode: {
-    fontFamily: primaryFontFamily.regular,
+    fontFamily: manrope.regular,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.sm,
     color: colors.textPrimary,
@@ -181,13 +181,13 @@ const styles = StyleSheet.create({
   },
   rowName: {
     flex: 1,
-    fontFamily: primaryFontFamily.regular,
+    fontFamily: manrope.regular,
     fontSize: fontSize.base,
     lineHeight: lineHeight.base,
     color: colors.textPrimary,
   },
   rowDialCode: {
-    fontFamily: primaryFontFamily.medium,
+    fontFamily: manrope.medium,
     fontSize: fontSize.base,
     lineHeight: lineHeight.base,
     color: colors.textSecondary,
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   emptyText: {
     paddingTop: spacing.lg,
     textAlign: "center",
-    fontFamily: primaryFontFamily.regular,
+    fontFamily: manrope.regular,
     fontSize: fontSize.sm,
     color: colors.textSecondary,
   },

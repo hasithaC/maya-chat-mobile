@@ -10,7 +10,7 @@ import {
   iconSize,
   lineHeight,
   minHitSlop,
-  primaryFontFamily,
+  manrope,
   spacing,
 } from "../../constants/tokens";
 import { SafeAreaContainer } from "../layout";
@@ -54,7 +54,7 @@ export function BottomSheet({
                   <Pressable onPress={onClose} hitSlop={minHitSlop}>
                     <Ionicons
                       name="close-outline"
-                      size={iconSize.sm}
+                      size={iconSize.lg}
                       color={colors.textSecondary}
                     />
                   </Pressable>
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
   },
   title: {
     flex: 1,
-    fontFamily: primaryFontFamily.bold,
+    fontFamily: manrope.bold,
     fontSize: fontSize.base,
     lineHeight: lineHeight.base,
     color: colors.textPrimary,

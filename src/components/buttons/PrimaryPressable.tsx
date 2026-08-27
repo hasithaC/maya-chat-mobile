@@ -8,7 +8,7 @@ import {
   controlHeight,
   fontSize,
   lineHeight,
-  primaryFontFamily,
+  manrope,
   spacing,
 } from "../../constants/tokens";
 
@@ -19,6 +19,7 @@ interface PrimaryPressableProps {
   onPress: () => void | Promise<void>;
   disabled?: boolean;
   appearance?: "default" | "inverted";
+  size?: "sm" | "lg";
 }
 
 export function PrimaryPressable({
@@ -26,6 +27,7 @@ export function PrimaryPressable({
   onPress,
   disabled = false,
   appearance = "default",
+  size = "lg",
 }: PrimaryPressableProps) {
   const [loading, setLoading] = useState(false);
   const shimmer = useRef(new Animated.Value(0)).current;
@@ -88,7 +90,7 @@ export function PrimaryPressable({
       <Pressable
         disabled={disabled || loading}
         onPress={handlePress}
-        style={styles.pressable}
+        style={[styles.pressable, { height: controlHeight[size] }]}
       >
         <AnimatedLinearGradient
           colors={gradientColors}
@@ -112,13 +114,12 @@ const styles = StyleSheet.create({
     width: "100%",
     justifyContent: "center",
     alignItems: "center",
-    height: controlHeight.lg,
     paddingHorizontal: spacing.md,
     borderRadius: borderRadius.full,
     overflow: "hidden",
   },
   text: {
-    fontFamily: primaryFontFamily.semiBold,
+    fontFamily: manrope.semiBold,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.sm,
     textAlign: "center",
