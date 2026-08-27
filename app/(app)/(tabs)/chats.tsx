@@ -1,11 +1,29 @@
 import { BubbleChatIcon, UserGroupIcon } from "@hugeicons/core-free-icons";
+import mayaAvatarLarge from "@/assets/images/avatars/maya-avatar-large.png";
+import emptyConversationImage from "@/assets/images/states/empty-conversation.png";
 import { router } from "expo-router";
-import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useMemo, useState } from "react";
 import {
+  Animated,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Reanimated, {
+  FadeIn,
+  FadeOut,
+  LinearTransition,
+} from "react-native-reanimated";
+import {
+  ChatsShimmer,
   ConversationListItem,
+  EmptyState,
+  ErrorState,
   FilterChip,
+  NoSearchResults,
   PopupMenu,
   PrimarySearchInput,
   SheetOptionRow,
@@ -21,6 +39,10 @@ import {
   spacing,
 } from "../../../src/constants/tokens";
 import { ROUTES } from "../../../src/constants/routes";
+import { useAuthStore } from "../../../src/domain/auth/store/auth.store";
+import { useConversations } from "../../../src/domain/conversations/hooks/conversations.hooks";
+import type { Conversation } from "../../../src/domain/conversations/types/conversations.types";
+import { useFadeTransition } from "../../../src/hooks/useFadeTransition";
 
 type ChatFilter = "maya" | "all" | "work" | "groups";
 
@@ -31,51 +53,105 @@ const FILTERS: { key: ChatFilter; label: string }[] = [
   { key: "groups", label: "Groups" },
 ];
 
-const CHATS = [
-  {
-    id: "maya-pa",
-    title: "Maya - Personal Assistant",
-    time: "16.04",
-    message: "Maya: Shared the updated mockups. Please review.",
-    pinned: true,
-    unreadCount: 1,
-  },
-  {
-    title: "Design Team - Group",
-    time: "16.04",
-    message: "Olivia: Shared the updated mockups. Please review.",
-    online: true,
-    unreadCount: 5,
-  },
-  {
-    title: "Threads Finding",
-    time: "15.41",
-    message:
-      "You: We've finalized the test results. Let's confirm the next steps.",
-  },
-  {
-    title: "Production & QC - Group",
-    time: "15.20",
-    message: "Peter: The new samples look good. Waiting for your approval.",
-    online: true,
-  },
-  {
-    title: "Management Updates - Group",
-    time: "13.01",
-    message: "You: Please check the timeline document. Added the changes.",
-  },
-  {
-    title: "Supplier Coordination - Group",
-    time: "11.33",
-    message: "James: We received the revised quotation. Need your sign-off.",
-  },
-];
+function matchesFilter(conversation: Conversation, filter: ChatFilter): boolean {
+  switch (filter) {
+    case "maya":
+      return conversation.type === "MAYA";
+    case "groups":
+      return conversation.isGroup;
+    case "work":
+    case "all":
+    default:
+      return true;
+  }
+}
+
+function formatTime(iso: unknown): string {
+  if (typeof iso !== "string") {
+    return "";
+  }
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function getConversationDisplay(
+  conversation: Conversation,
+  currentUserId?: string,
+) {
+  const isMaya = conversation.type === "MAYA";
+
+  if (isMaya) {
+    return { title: "Maya - Personal Assistant", avatarSource: mayaAvatarLarge };
+  }
+
+  if (conversation.isGroup) {
+    return {
+      title:
+        typeof conversation.name === "string" ? conversation.name : "Group chat",
+      avatarSource:
+        typeof conversation.avatar === "string"
+          ? { uri: conversation.avatar }
+          : undefined,
+    };
+  }
+
+  const other = conversation.participants.find(
+    (participant) => participant.userId !== currentUserId,
+  )?.user;
+
+  return {
+    title: other?.fullName ?? "Unknown",
+    avatarSource:
+      other && typeof other.avatar === "string"
+        ? { uri: other.avatar }
+        : undefined,
+  };
+}
 
 export default function ChatsScreen() {
   const insets = useSafeAreaInsets();
   const containerInsetStyle = { paddingTop: Math.max(insets.top, spacing.lg) };
   const [filter, setFilter] = useState<ChatFilter>("all");
   const [newSheetVisible, setNewSheetVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const currentUserId = useAuthStore((state) => state.user?.id);
+  const {
+    data: conversations,
+    isPending,
+    isError,
+    refetch,
+  } = useConversations();
+  const { loadingOpacity, contentOpacity } = useFadeTransition({
+    isLoading: isPending,
+  });
+
+  const displayConversations = useMemo(
+    () =>
+      (conversations ?? []).map((conversation) => ({
+        conversation,
+        ...getConversationDisplay(conversation, currentUserId),
+      })),
+    [conversations, currentUserId],
+  );
+
+  const categoryConversations = displayConversations.filter(({ conversation }) =>
+    matchesFilter(conversation, filter),
+  );
+
+  const query = searchQuery.trim().toLowerCase();
+  const filteredConversations = query
+    ? categoryConversations.filter(
+        ({ title, conversation }) =>
+          title.toLowerCase().includes(query) ||
+          (typeof conversation.lastMessagePreview === "string" &&
+            conversation.lastMessagePreview.toLowerCase().includes(query)),
+      )
+    : categoryConversations;
+
+  const selectedFilterLabel = FILTERS.find(({ key }) => key === filter)?.label ?? "";
 
   return (
     <View style={[styles.container, containerInsetStyle]}>
@@ -93,6 +169,8 @@ export default function ChatsScreen() {
         />
         <PrimarySearchInput
           placeholder="Search for contacts & groups"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
           onSearch={() => {}}
         />
 
@@ -112,27 +190,77 @@ export default function ChatsScreen() {
         </ScrollView>
       </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {CHATS.map((chat, index) => (
-          <ConversationListItem
-            key={chat.title}
-            title={chat.title}
-            time={chat.time}
-            message={chat.message}
-            online={chat.online}
-            pinned={chat.pinned}
-            unreadCount={chat.unreadCount}
-            showDivider={index < CHATS.length - 1}
-            onPress={
-              chat.id ? () => router.push(ROUTES.conversation(chat.id)) : undefined
-            }
-          />
-        ))}
-      </ScrollView>
+      <View style={styles.body}>
+        <Animated.View
+          style={[styles.absoluteFill, { opacity: loadingOpacity }]}
+          pointerEvents={isPending ? "auto" : "none"}
+        >
+          <ChatsShimmer />
+        </Animated.View>
+
+        <Animated.View style={[styles.body, { opacity: contentOpacity }]}>
+          {isError ? (
+            <View style={styles.stateContainer}>
+              <ErrorState
+                title="Something went wrong"
+                subtitle="We couldn't load your chats. Please try again."
+                onRetry={() => refetch()}
+              />
+            </View>
+          ) : displayConversations.length === 0 ? (
+            <View style={styles.stateContainer}>
+              <EmptyState
+                image={emptyConversationImage}
+                title="No conversations yet"
+                subtitle="Start a new chat with Maya or add a contact to get going."
+              />
+            </View>
+          ) : filteredConversations.length === 0 ? (
+            <View style={styles.stateContainer}>
+              <NoSearchResults
+                title="No matches found"
+                subtitle={
+                  query
+                    ? `We couldn't find any conversations matching "${searchQuery}".`
+                    : `You don't have any conversations under "${selectedFilterLabel}" yet.`
+                }
+              />
+            </View>
+          ) : (
+            <ScrollView
+              style={styles.scroll}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {filteredConversations.map(
+                ({ conversation, title, avatarSource }, index) => (
+                  <Reanimated.View
+                    key={conversation.id}
+                    layout={LinearTransition}
+                    entering={FadeIn}
+                    exiting={FadeOut}
+                  >
+                    <ConversationListItem
+                      title={title}
+                      avatarSource={avatarSource}
+                      time={formatTime(conversation.lastMessageAt)}
+                      message={
+                        typeof conversation.lastMessagePreview === "string"
+                          ? conversation.lastMessagePreview
+                          : "No messages yet"
+                      }
+                      showDivider={index < filteredConversations.length - 1}
+                      onPress={() =>
+                        router.push(ROUTES.conversation(String(conversation.id)))
+                      }
+                    />
+                  </Reanimated.View>
+                ),
+              )}
+            </ScrollView>
+          )}
+        </Animated.View>
+      </View>
 
       <PopupMenu
         visible={newSheetVisible}
@@ -163,6 +291,12 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     paddingBottom: spacing.xs,
   },
+  body: {
+    flex: 1,
+  },
+  absoluteFill: {
+    ...StyleSheet.absoluteFillObject,
+  },
   container: {
     flex: 1,
     paddingHorizontal: spacing.lg,
@@ -187,6 +321,12 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flex: 1,
+  },
+  stateContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
   },
   scrollContent: {
     flexGrow: 1,
