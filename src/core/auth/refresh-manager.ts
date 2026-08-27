@@ -1,5 +1,8 @@
 import axios from 'axios';
+import {useAuthStore} from '../../domain/auth/store/auth.store';
 import {API_BASE_URL} from '../api/config';
+import type {Envelope} from '../api/envelope';
+import {unwrap} from '../api/envelope';
 import {authEvents} from './auth-events';
 import {tokenManager} from './token-manager';
 
@@ -28,13 +31,15 @@ async function performRefresh(): Promise<string> {
 
   // Raw axios call (not apiClient) so this request never passes back
   // through the 401 interceptor and re-triggers itself.
-  const res = await axios.post<RefreshTokenResponse>(
+  const res = await axios.post<Envelope<RefreshTokenResponse>>(
     `${API_BASE_URL}${REFRESH_ENDPOINT}`,
     payload,
   );
+  const tokens = unwrap(res.data);
 
-  await tokenManager.setTokens(res.data);
-  return res.data.accessToken;
+  await tokenManager.setTokens(tokens);
+  useAuthStore.getState().setAccessToken(tokens.accessToken);
+  return tokens.accessToken;
 }
 
 export function refreshAccessToken(): Promise<string> {

@@ -32,8 +32,8 @@ import {
   iconSize,
   lineHeight,
   palette,
-  primaryFontFamily,
-  secondaryFontFamily,
+  manrope,
+  geist,
   spacing,
   withAlpha,
 } from "../../../constants/tokens";
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   heading: {
-    fontFamily: primaryFontFamily.bold,
+    fontFamily: manrope.bold,
     fontSize: fontSize["3xl"],
     lineHeight: lineHeight["3xl"],
     color: colors.textPrimary,
@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.border,
   },
   dividerText: {
-    fontFamily: secondaryFontFamily.regular,
+    fontFamily: geist.regular,
     fontSize: fontSize.xs,
     lineHeight: lineHeight.xs,
     color: colors.textPrimary,
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   footerText: {
-    fontFamily: primaryFontFamily.regular,
+    fontFamily: manrope.regular,
     fontSize: fontSize.xs,
     lineHeight: lineHeight.xs,
     color: colors.textSecondary,

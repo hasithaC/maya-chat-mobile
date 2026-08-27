@@ -1,8 +1,9 @@
 import axios, {type AxiosError, type InternalAxiosRequestConfig} from 'axios';
+import {useAuthStore} from '../../domain/auth/store/auth.store';
 import {refreshAccessToken} from '../auth/refresh-manager';
-import {tokenManager} from '../auth/token-manager';
 import {API_BASE_URL} from './config';
 import {normalizeError} from './errors';
+import {unwrap} from './envelope';
 
 type RetryableRequestConfig = InternalAxiosRequestConfig & {_retry?: boolean};
 
@@ -11,8 +12,8 @@ export const apiClient = axios.create({
   timeout: 30000,
 });
 
-apiClient.interceptors.request.use(async config => {
-  const accessToken = await tokenManager.getAccessToken();
+apiClient.interceptors.request.use(config => {
+  const accessToken = useAuthStore.getState().accessToken;
   if (accessToken) {
     config.headers.set('Authorization', `Bearer ${accessToken}`);
   }
@@ -44,6 +45,7 @@ apiClient.interceptors.response.use(
         headers: res.headers,
       });
     }
+    res.data = unwrap(res.data);
     return res;
   },
   async (error: AxiosError) => {

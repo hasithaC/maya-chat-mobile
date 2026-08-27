@@ -1,6 +1,6 @@
 import {useLocalSearchParams} from 'expo-router';
 import {StyleSheet, Text, View} from 'react-native';
-import {colors, fontSize, lineHeight, primaryFontFamily, spacing} from '../../src/constants/tokens';
+import {colors, fontSize, lineHeight, manrope, spacing} from '../../src/constants/tokens';
 import {useAuthStore} from '../../src/domain/auth/store/auth.store';
 
 // Placeholder until the real account-creation screen (name/persona/etc.) is built.
@@ -26,14 +26,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundPrimary,
   },
   text: {
-    fontFamily: primaryFontFamily.medium,
+    fontFamily: manrope.medium,
     fontSize: fontSize.base,
     lineHeight: lineHeight.base,
     color: colors.textPrimary,
     textAlign: 'center',
   },
   token: {
-    fontFamily: primaryFontFamily.regular,
+    fontFamily: manrope.regular,
     fontSize: fontSize.xs,
     lineHeight: lineHeight.xs,
     color: colors.textSecondary,

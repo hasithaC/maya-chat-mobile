@@ -7,11 +7,13 @@ import type {User} from '../types/auth.types';
 interface AuthState {
   // ── State ──
   isAuthenticated: boolean;
+  accessToken: string | null;
   user: User | null;
   verifyToken: string | null;
 
   // ── Actions ──
   setAuthenticated: (isAuthenticated: boolean) => void;
+  setAccessToken: (accessToken: string | null) => void;
   setUser: (user: User) => void;
   setVerifyToken: (verifyToken: string | null) => void;
   logout: () => Promise<void>;
@@ -19,6 +21,7 @@ interface AuthState {
 
 const initialState = {
   isAuthenticated: false,
+  accessToken: null as string | null,
   user: null as User | null,
   verifyToken: null as string | null,
 };
@@ -29,6 +32,8 @@ export const useAuthStore = create<AuthState>()(
       ...initialState,
 
       setAuthenticated: isAuthenticated => set({isAuthenticated}),
+
+      setAccessToken: accessToken => set({accessToken}),
 
       setUser: user => set({user}),
 

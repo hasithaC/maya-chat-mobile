@@ -1,18 +1,16 @@
-import { Search01Icon, Search02Icon } from "@hugeicons/core-free-icons";
+import { Search01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { useEffect, useState } from "react";
 import { StyleSheet, TextInput, View } from "react-native";
 import {
   borderRadius,
-  borderWidth,
   colors,
   controlHeight,
   fontSize,
   iconSize,
   lineHeight,
-  primaryFontFamily,
+  geist,
   spacing,
-  withAlpha,
 } from "../../constants/tokens";
 
 interface PrimarySearchInputProps {
@@ -31,7 +29,6 @@ export function PrimarySearchInput({
   onChangeText,
 }: PrimarySearchInputProps) {
   const [internalValue, setInternalValue] = useState("");
-  const [isFocused, setIsFocused] = useState(false);
   const isControlled = controlledValue !== undefined;
   const value = isControlled ? controlledValue : internalValue;
 
@@ -52,19 +49,10 @@ export function PrimarySearchInput({
   };
 
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          borderColor: isFocused
-            ? colors.borderAccent
-            : withAlpha(colors.borderAccent, 0),
-        },
-      ]}
-    >
+    <View style={styles.container}>
       <HugeiconsIcon
-        icon={Search02Icon}
-        size={iconSize.xs}
+        icon={Search01Icon}
+        size={iconSize.sm}
         color={colors.textPrimary}
       />
       <TextInput
@@ -72,8 +60,6 @@ export function PrimarySearchInput({
         value={value}
         placeholderTextColor={colors.textSecondary}
         onChangeText={handleChangeText}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
         style={styles.input}
       />
     </View>
@@ -82,20 +68,19 @@ export function PrimarySearchInput({
 
 const styles = StyleSheet.create({
   container: {
-    height: controlHeight.lg,
-    gap: spacing.md,
+    height: controlHeight.md,
+    gap: spacing.sm,
     borderRadius: borderRadius["2xl"],
     backgroundColor: colors.backgroundSecondary,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: spacing.lg,
-    borderWidth: borderWidth.thin,
   },
   input: {
     flex: 1,
-    fontFamily: primaryFontFamily.regular,
+    fontFamily: geist.regular,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.sm,
-    color: colors.textPrimary,
+    color: colors.textSecondary,
   },
 });

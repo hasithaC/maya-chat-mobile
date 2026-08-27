@@ -13,10 +13,17 @@ export const iconSize = {
 } as const;
 
 export const avatarSize = {
+  xs: 24,
   sm: 32,
   md: 40,
   lg: 56,
   xl: 80,
+} as const;
+
+export const badgeSize = {
+  sm: 16,
+  md: 20,
+  lg: 24,
 } as const;
 
 export const controlHeight = {

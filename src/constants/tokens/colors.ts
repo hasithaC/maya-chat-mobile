@@ -59,11 +59,10 @@ export const palette = {
     100: "#F3F3F5",
     200: "#F7F8F8",
     300: "#F4F5F5",
-    900: "#04130E"
+    900: "#04130E",
   },
 } as const;
 
-// opacity is 0-1 (e.g. 0.24), not a 0-100 percentage.
 export function withAlpha(hex: string, opacity: number): string {
   const normalized = hex.replace("#", "");
   const alpha = Math.round(Math.min(Math.max(opacity, 0), 1) * 255)
@@ -75,16 +74,19 @@ export function withAlpha(hex: string, opacity: number): string {
 
 export const colors = {
   backgroundPrimary: palette.surface.white, //verified
-  backgroundSecondary: palette.surface[200],//verified
+  backgroundSecondary: palette.surface[200], //verified
+  backgroundAccent: palette.green[100],
 
   textPrimary: palette.ink[900], //verified
   textSecondary: palette.ink[500], //verified
   textInverse: palette.surface.white,
-  textLink: palette.green[600],
+  textLink: palette.green[900],
+  textAccent: palette.green[600],
 
   border: palette.border[300], //verified
   borderStrong: palette.border[700],
   borderAccent: palette.green[600], //verified
+  borderInverse: palette.surface.white,
 
   buttonPrimary: palette.green[600],
   buttonDanger: palette.red[600],
@@ -94,7 +96,7 @@ export const colors = {
   buttonSecondaryDisabled: palette.border[100], //verified
 
   success: palette.green[600],
-  warning: palette.amber[500],
+  warning: palette.amber[700],
   error: palette.red[600],
   info: palette.blue[500],
 

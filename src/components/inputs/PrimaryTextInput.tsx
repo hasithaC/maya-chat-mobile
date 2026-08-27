@@ -18,7 +18,7 @@ import {
   fontSize,
   iconSize,
   lineHeight,
-  primaryFontFamily,
+  manrope,
   spacing,
   withAlpha,
 } from "../../constants/tokens";
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backgroundSecondary,
   },
   label: {
-    fontFamily: primaryFontFamily.regular,
+    fontFamily: manrope.regular,
     fontSize: fontSize.xs,
     color: colors.textSecondary,
     marginBottom: spacing.xs,
@@ -121,20 +121,20 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: fontSize.sm,
     lineHeight: lineHeight.sm,
-    fontFamily: primaryFontFamily.regular,
+    fontFamily: manrope.regular,
     color: colors.textPrimary,
   },
   disabled: {
     color: colors.textSecondary,
   },
   helperText: {
-    fontFamily: primaryFontFamily.regular,
+    fontFamily: manrope.regular,
     fontSize: fontSize.xs,
     color: colors.textSecondary,
     lineHeight: lineHeight.xs,
   },
   errorText: {
-    fontFamily: primaryFontFamily.regular,
+    fontFamily: manrope.regular,
     fontSize: fontSize.xs,
     color: colors.error,
     lineHeight: lineHeight.xs,
