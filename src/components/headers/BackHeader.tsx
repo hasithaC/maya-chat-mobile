@@ -1,6 +1,7 @@
 import { ChevronLeftIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { router } from "expo-router";
+import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import {
   colors,
@@ -15,9 +16,10 @@ import {
 interface BackHeaderProps {
   title: string;
   onBack?: () => void;
+  trailing?: ReactNode;
 }
 
-export function BackHeader({ title, onBack }: BackHeaderProps) {
+export function BackHeader({ title, onBack, trailing }: BackHeaderProps) {
   return (
     <View style={styles.container}>
       <Pressable
@@ -32,6 +34,7 @@ export function BackHeader({ title, onBack }: BackHeaderProps) {
         />
       </Pressable>
       <Text style={styles.title}>{title}</Text>
+      {trailing}
     </View>
   );
 }
