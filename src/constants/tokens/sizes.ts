@@ -1,6 +1,6 @@
-import { Dimensions } from 'react-native';
+import { Dimensions } from "react-native";
 
-const { width: deviceWidth, height: deviceHeight } = Dimensions.get('window');
+const { width: deviceWidth, height: deviceHeight } = Dimensions.get("window");
 
 export { deviceWidth, deviceHeight };
 
@@ -10,6 +10,10 @@ export const iconSize = {
   md: 20,
   lg: 24,
   xl: 32,
+  "2xl": 40,
+  "3xl": 48,
+  "4xl": 56,
+  "5xl": 64,
 } as const;
 
 export const avatarSize = {
@@ -18,6 +22,7 @@ export const avatarSize = {
   md: 40,
   lg: 56,
   xl: 80,
+  "2xl": 128,
 } as const;
 
 export const badgeSize = {
@@ -27,6 +32,7 @@ export const badgeSize = {
 } as const;
 
 export const controlHeight = {
+  xs: 32,
   sm: 36,
   md: 44,
   lg: 52,
