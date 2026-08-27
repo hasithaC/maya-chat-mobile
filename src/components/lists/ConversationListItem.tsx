@@ -1,7 +1,7 @@
 import { PinIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import type { ImageSourcePropType } from "react-native";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import {
   avatarSize,
   badgeSize,
@@ -27,6 +27,7 @@ interface ConversationListItemProps {
   pinned?: boolean;
   unreadCount?: number;
   showDivider?: boolean;
+  onPress?: () => void;
 }
 
 const AVATAR_COLORS = [
@@ -54,11 +55,12 @@ export function ConversationListItem({
   message,
   pinned = false,
   unreadCount = 0,
+  onPress,
 }: ConversationListItemProps) {
   const avatarColor = colorForTitle(title);
 
   return (
-    <View style={[styles.container, styles.divider]}>
+    <Pressable style={[styles.container, styles.divider]} onPress={onPress}>
       <View style={styles.avatarWrapper}>
         {avatarSource ? (
           <Image source={avatarSource} style={styles.avatarImage} />
@@ -103,7 +105,7 @@ export function ConversationListItem({
           </View>
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 

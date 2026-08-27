@@ -29,12 +29,7 @@ export default function MyProfileScreen() {
     <View style={[styles.container, containerInsetStyle]}>
       <BackHeader title="My Profile" />
 
-      <View
-        style={{
-          alignItems: "center",
-          marginTop: spacing["2xl"],
-        }}
-      >
+      <View style={styles.avatarRow}>
         <View style={styles.avatar}>
           <HugeiconsIcon
             icon={UserIcon}
@@ -94,6 +89,10 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flex: 1,
+  },
+  avatarRow: {
+    alignItems: "center",
+    marginTop: spacing["2xl"],
   },
   scrollContent: {
     flexGrow: 1,

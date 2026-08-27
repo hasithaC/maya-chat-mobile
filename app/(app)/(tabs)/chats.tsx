@@ -33,6 +33,7 @@ const FILTERS: { key: ChatFilter; label: string }[] = [
 
 const CHATS = [
   {
+    id: "maya-pa",
     title: "Maya - Personal Assistant",
     time: "16.04",
     message: "Maya: Shared the updated mockups. Please review.",
@@ -126,6 +127,9 @@ export default function ChatsScreen() {
             pinned={chat.pinned}
             unreadCount={chat.unreadCount}
             showDivider={index < CHATS.length - 1}
+            onPress={
+              chat.id ? () => router.push(ROUTES.conversation(chat.id)) : undefined
+            }
           />
         ))}
       </ScrollView>

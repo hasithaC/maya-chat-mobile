@@ -74,9 +74,9 @@ export function withAlpha(hex: string, opacity: number): string {
 
 export const colors = {
   backgroundPrimary: palette.surface.white, //verified
-  backgroundSecondary: palette.surface[200], //verified
-  backgroundAccent: palette.green[100],
-  backgroundAccentStrong: palette.green[200],
+  backgroundSecondary: palette.surface[300], //verified
+  backgroundAccent: palette.green[200],
+  backgroundAccentStrong: palette.green[400],
 
   textPrimary: palette.ink[900], //verified
   textSecondary: palette.ink[500], //verified
