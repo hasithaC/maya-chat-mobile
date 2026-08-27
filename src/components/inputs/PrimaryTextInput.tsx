@@ -41,6 +41,7 @@ export function PrimaryTextInput({
   helperText,
   error,
   leftIcon,
+  editable,
   onFocus,
   onBlur,
   ...rest
@@ -83,7 +84,7 @@ export function PrimaryTextInput({
           placeholderTextColor={colors.textSecondary}
           autoCapitalize="none"
           {...rest}
-          editable={!disabled}
+          editable={editable ?? !disabled}
           onFocus={handleFocus}
           onBlur={handleBlur}
           style={[styles.input, disabled && styles.disabled, inputStyle]}

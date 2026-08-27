@@ -1,4 +1,5 @@
 import { WhatsappIcon } from "@hugeicons/core-free-icons";
+import { router } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -17,6 +18,7 @@ import {
   palette,
   spacing,
 } from "../../../src/constants/tokens";
+import { ROUTES } from "../../../src/constants/routes";
 import { useAuthStore } from "../../../src/domain/auth/store/auth.store";
 
 export default function ProfileScreen() {
@@ -39,7 +41,9 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <ProfileSummaryCard name="Robert Williams" phone="+94 75 123 4567" />
+        <Pressable onPress={() => router.push(ROUTES.myProfile)}>
+          <ProfileSummaryCard name="Robert Williams" phone="+94 75 123 4567" />
+        </Pressable>
 
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Connectors</Text>
@@ -77,10 +81,12 @@ export default function ProfileScreen() {
           <View style={styles.sectionDivider}>
             <SettingsRow label="Maya (Personal Assistant)" />
             <SettingsRow label="System Notifications" />
-            <SettingsRow label="Device Access Permissions" showDivider={false} />
+            <SettingsRow
+              label="Device Access Permissions"
+              showDivider={false}
+            />
           </View>
         </View>
-
       </ScrollView>
     </View>
   );

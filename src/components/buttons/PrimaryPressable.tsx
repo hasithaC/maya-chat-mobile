@@ -18,8 +18,8 @@ interface PrimaryPressableProps {
   text: string;
   onPress: () => void | Promise<void>;
   disabled?: boolean;
-  appearance?: "default" | "inverted";
-  size?: "sm" | "lg";
+  appearance?: "default" | "inverted" | "outline";
+  size?: "sm" | "md";
 }
 
 export function PrimaryPressable({
@@ -27,7 +27,7 @@ export function PrimaryPressable({
   onPress,
   disabled = false,
   appearance = "default",
-  size = "lg",
+  size = "md",
 }: PrimaryPressableProps) {
   const [loading, setLoading] = useState(false);
   const shimmer = useRef(new Animated.Value(0)).current;
@@ -58,14 +58,26 @@ export function PrimaryPressable({
   }, [loading, shimmer]);
 
   const baseColor =
-    appearance === "default" ? colors.buttonPrimary : colors.backgroundPrimary;
-  const backgroundColor = disabled ? colors.buttonPrimaryMuted : baseColor;
+    appearance === "default"
+      ? colors.buttonPrimary
+      : appearance === "outline"
+        ? "transparent"
+        : colors.backgroundPrimary;
+  const backgroundColor =
+    disabled && appearance !== "outline"
+      ? colors.buttonPrimaryMuted
+      : baseColor;
   const textColor =
-    appearance === "default" ? colors.textInverse : colors.textPrimary;
+    appearance === "default"
+      ? colors.textInverse
+      : appearance === "outline"
+        ? colors.textLink
+        : colors.textPrimary;
 
-  const gradientColors = loading
-    ? ([backgroundColor, colors.buttonPrimaryMuted] as const)
-    : ([backgroundColor, backgroundColor] as const);
+  const gradientColors =
+    loading && appearance !== "outline"
+      ? ([backgroundColor, colors.buttonPrimaryMuted] as const)
+      : ([backgroundColor, backgroundColor] as const);
 
   const gradientStartX = shimmer.interpolate({
     inputRange: [0, 1],
@@ -90,7 +102,11 @@ export function PrimaryPressable({
       <Pressable
         disabled={disabled || loading}
         onPress={handlePress}
-        style={[styles.pressable, { height: controlHeight[size] }]}
+        style={[
+          styles.pressable,
+          { height: controlHeight[size] },
+          appearance === "outline" && styles.outlinePressable,
+        ]}
       >
         <AnimatedLinearGradient
           colors={gradientColors}
@@ -117,6 +133,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     borderRadius: borderRadius.full,
     overflow: "hidden",
+  },
+  outlinePressable: {
+    borderWidth: borderWidth.thin,
+    borderColor: colors.borderAccent,
   },
   text: {
     fontFamily: manrope.semiBold,
