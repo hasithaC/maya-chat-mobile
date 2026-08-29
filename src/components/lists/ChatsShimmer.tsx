@@ -59,6 +59,7 @@ const styles = StyleSheet.create({
     width: avatarSize.lg,
     height: avatarSize.lg,
     borderRadius: avatarSize.lg / 2,
+    backgroundColor: colors.backgroundSecondary,
   },
   content: {
     flex: 1,
@@ -74,15 +75,18 @@ const styles = StyleSheet.create({
     width: "45%",
     height: 14,
     borderRadius: borderRadius.xs,
+    backgroundColor: colors.backgroundSecondary,
   },
   timeLine: {
     width: 36,
     height: 10,
     borderRadius: borderRadius.xs,
+    backgroundColor: colors.backgroundSecondary,
   },
   messageLine: {
     width: "80%",
     height: 12,
     borderRadius: borderRadius.xs,
+    backgroundColor: colors.backgroundSecondary,
   },
 });

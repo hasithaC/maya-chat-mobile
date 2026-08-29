@@ -4,7 +4,9 @@ import { router } from "expo-router";
 import type { ReactNode } from "react";
 import type { ImageSourcePropType } from "react-native";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Shimmer, ShimmerProvider } from "react-native-fast-shimmer";
 import {
+  avatarColors,
   avatarSize,
   colors,
   controlHeight,
@@ -17,11 +19,26 @@ import {
 } from "../../constants/tokens";
 
 interface ConversationHeaderProps {
-  avatarSource: ImageSourcePropType;
+  avatarSource?: ImageSourcePropType;
   title: string;
   status: string;
   onBack?: () => void;
   trailing?: ReactNode;
+  loading?: boolean;
+}
+
+const shimmerGray: string[] = [
+  colors.backgroundSecondary,
+  colors.border,
+  colors.backgroundSecondary,
+];
+
+function colorForTitle(title: string) {
+  const sum = Array.from(title).reduce(
+    (total, char) => total + char.charCodeAt(0),
+    0,
+  );
+  return avatarColors[sum % avatarColors.length];
 }
 
 export function ConversationHeader({
@@ -30,7 +47,10 @@ export function ConversationHeader({
   status,
   onBack,
   trailing,
+  loading = false,
 }: ConversationHeaderProps) {
+  const avatarColor = colorForTitle(title);
+
   return (
     <View style={styles.container}>
       <Pressable
@@ -44,14 +64,37 @@ export function ConversationHeader({
           color={colors.textPrimary}
         />
       </Pressable>
-      <Image source={avatarSource} style={styles.avatar} />
+      {loading ? (
+        <ShimmerProvider duration={1500}>
+          <Shimmer style={styles.avatar} linearGradients={shimmerGray} />
+        </ShimmerProvider>
+      ) : avatarSource ? (
+        <Image source={avatarSource} style={styles.avatar} />
+      ) : (
+        <View style={[styles.avatarFallback, { backgroundColor: avatarColor }]}>
+          <Text style={styles.avatarInitial}>
+            {title.charAt(0).toUpperCase()}
+          </Text>
+        </View>
+      )}
       <View style={styles.content}>
-        <Text style={styles.title} numberOfLines={1}>
-          {title}
-        </Text>
-        <Text style={styles.status} numberOfLines={1}>
-          {status}
-        </Text>
+        {loading ? (
+          <ShimmerProvider duration={1500}>
+            <View style={styles.textStack}>
+              <Shimmer style={styles.titleLine} linearGradients={shimmerGray} />
+              <Shimmer style={styles.statusLine} linearGradients={shimmerGray} />
+            </View>
+          </ShimmerProvider>
+        ) : (
+          <>
+            <Text style={styles.title} numberOfLines={1}>
+              {title}
+            </Text>
+            <Text style={styles.status} numberOfLines={1}>
+              {status}
+            </Text>
+          </>
+        )}
       </View>
       {trailing}
     </View>
@@ -76,9 +119,38 @@ const styles = StyleSheet.create({
     width: avatarSize.md,
     height: avatarSize.md,
     borderRadius: avatarSize.md / 2,
+    backgroundColor: colors.backgroundSecondary,
+  },
+  avatarFallback: {
+    width: avatarSize.md,
+    height: avatarSize.md,
+    borderRadius: avatarSize.md / 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarInitial: {
+    fontFamily: manrope.bold,
+    fontSize: fontSize.base,
+    lineHeight: lineHeight.base,
+    color: colors.textInverse,
   },
   content: {
     flex: 1,
+  },
+  textStack: {
+    gap: spacing.xs,
+  },
+  titleLine: {
+    width: "60%",
+    height: 14,
+    borderRadius: spacing.xs,
+    backgroundColor: colors.backgroundSecondary,
+  },
+  statusLine: {
+    width: "30%",
+    height: 10,
+    borderRadius: spacing.xs,
+    backgroundColor: colors.backgroundSecondary,
   },
   title: {
     fontFamily: manrope.bold,

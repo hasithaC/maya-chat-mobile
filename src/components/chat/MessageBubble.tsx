@@ -12,11 +12,15 @@ import {
   shadows,
   spacing,
 } from "../../constants/tokens";
+import { MessageImageGrid } from "./MessageImageGrid";
+import { VoiceNotePlayer } from "./VoiceNotePlayer";
 
 interface MessageBubbleProps {
   variant: "incoming" | "outgoing" | "outgoing-plain";
   text: string;
   time?: string;
+  images?: string[];
+  voiceUrl?: string;
 }
 
 const MENTION_PATTERN = /@\w+(?:\s\w+)?/g;
@@ -51,7 +55,13 @@ function renderTextWithMentions(text: string, textStyle: StyleProp<TextStyle>) {
   return <Text style={textStyle}>{parts}</Text>;
 }
 
-export function MessageBubble({ variant, text, time }: MessageBubbleProps) {
+export function MessageBubble({
+  variant,
+  text,
+  time,
+  images,
+  voiceUrl,
+}: MessageBubbleProps) {
   return (
     <View
       style={[
@@ -61,7 +71,9 @@ export function MessageBubble({ variant, text, time }: MessageBubbleProps) {
         variant === "outgoing-plain" && styles.outgoingPlain,
       ]}
     >
-      {renderTextWithMentions(text, styles.text)}
+      {voiceUrl ? <VoiceNotePlayer audioUrl={voiceUrl} /> : null}
+      {images && images.length > 0 ? <MessageImageGrid images={images} /> : null}
+      {text.trim().length > 0 ? renderTextWithMentions(text, styles.text) : null}
       {time ? <Text style={styles.time}>{time}</Text> : null}
     </View>
   );

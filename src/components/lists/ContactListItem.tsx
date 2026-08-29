@@ -1,6 +1,7 @@
 import type { ImageSourcePropType } from "react-native";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import {
+  avatarColors,
   avatarSize,
   borderWidth,
   colors,
@@ -8,9 +9,7 @@ import {
   geist,
   lineHeight,
   manrope,
-  palette,
   spacing,
-  withAlpha,
 } from "../../constants/tokens";
 
 interface ContactListItemProps {
@@ -22,21 +21,12 @@ interface ContactListItemProps {
   showDivider?: boolean;
 }
 
-const AVATAR_COLORS = [
-  palette.green[600],
-  palette.amber[700],
-  palette.blue[500],
-  palette.red[600],
-  palette.blue[900],
-  palette.green[900],
-];
-
 function colorForName(name: string) {
   const sum = Array.from(name).reduce(
     (total, char) => total + char.charCodeAt(0),
     0,
   );
-  return AVATAR_COLORS[sum % AVATAR_COLORS.length];
+  return avatarColors[sum % avatarColors.length];
 }
 
 function HighlightedName({ name, query }: { name: string; query?: string }) {
@@ -77,13 +67,8 @@ export function ContactListItem({
       {avatarSource ? (
         <Image source={avatarSource} style={styles.avatarImage} />
       ) : (
-        <View
-          style={[
-            styles.avatarFallback,
-            { backgroundColor: withAlpha(avatarColor, 0.16) },
-          ]}
-        >
-          <Text style={[styles.avatarInitial, { color: avatarColor }]}>
+        <View style={[styles.avatarFallback, { backgroundColor: avatarColor }]}>
+          <Text style={styles.avatarInitial}>
             {name.charAt(0).toUpperCase()}
           </Text>
         </View>
@@ -123,6 +108,7 @@ const styles = StyleSheet.create({
     fontFamily: manrope.bold,
     fontSize: fontSize.base,
     lineHeight: lineHeight.base,
+    color: colors.textInverse,
   },
   content: {
     flex: 1,

@@ -1,5 +1,4 @@
 import { BubbleChatIcon, UserGroupIcon } from "@hugeicons/core-free-icons";
-import mayaAvatarLarge from "@/assets/images/avatars/maya-avatar-large.png";
 import emptyConversationImage from "@/assets/images/states/empty-conversation.png";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
@@ -42,7 +41,9 @@ import { ROUTES } from "../../../src/constants/routes";
 import { useAuthStore } from "../../../src/domain/auth/store/auth.store";
 import { useConversations } from "../../../src/domain/conversations/hooks/conversations.hooks";
 import type { Conversation } from "../../../src/domain/conversations/types/conversations.types";
+import { getConversationDisplay } from "../../../src/domain/conversations/utils/conversation-display";
 import { useFadeTransition } from "../../../src/hooks/useFadeTransition";
+import { formatTime } from "../../../src/utils/date";
 
 type ChatFilter = "maya" | "all" | "work" | "groups";
 
@@ -66,51 +67,6 @@ function matchesFilter(conversation: Conversation, filter: ChatFilter): boolean 
   }
 }
 
-function formatTime(iso: unknown): string {
-  if (typeof iso !== "string") {
-    return "";
-  }
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) {
-    return "";
-  }
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-}
-
-function getConversationDisplay(
-  conversation: Conversation,
-  currentUserId?: string,
-) {
-  const isMaya = conversation.type === "MAYA";
-
-  if (isMaya) {
-    return { title: "Maya - Personal Assistant", avatarSource: mayaAvatarLarge };
-  }
-
-  if (conversation.isGroup) {
-    return {
-      title:
-        typeof conversation.name === "string" ? conversation.name : "Group chat",
-      avatarSource:
-        typeof conversation.avatar === "string"
-          ? { uri: conversation.avatar }
-          : undefined,
-    };
-  }
-
-  const other = conversation.participants.find(
-    (participant) => participant.userId !== currentUserId,
-  )?.user;
-
-  return {
-    title: other?.fullName ?? "Unknown",
-    avatarSource:
-      other && typeof other.avatar === "string"
-        ? { uri: other.avatar }
-        : undefined,
-  };
-}
-
 export default function ChatsScreen() {
   const insets = useSafeAreaInsets();
   const containerInsetStyle = { paddingTop: Math.max(insets.top, spacing.lg) };
@@ -126,6 +82,7 @@ export default function ChatsScreen() {
   } = useConversations();
   const { loadingOpacity, contentOpacity } = useFadeTransition({
     isLoading: isPending,
+    loadingDuration: 250,
   });
 
   const displayConversations = useMemo(
@@ -237,7 +194,7 @@ export default function ChatsScreen() {
                   <Reanimated.View
                     key={conversation.id}
                     layout={LinearTransition}
-                    entering={FadeIn}
+                    entering={FadeIn.delay(index * 40).duration(250)}
                     exiting={FadeOut}
                   >
                     <ConversationListItem

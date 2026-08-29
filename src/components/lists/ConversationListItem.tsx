@@ -3,6 +3,7 @@ import { HugeiconsIcon } from "@hugeicons/react-native";
 import type { ImageSourcePropType } from "react-native";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import {
+  avatarColors,
   avatarSize,
   badgeSize,
   borderRadius,
@@ -13,9 +14,7 @@ import {
   iconSize,
   lineHeight,
   manrope,
-  palette,
   spacing,
-  withAlpha,
 } from "../../constants/tokens";
 
 interface ConversationListItemProps {
@@ -30,21 +29,12 @@ interface ConversationListItemProps {
   onPress?: () => void;
 }
 
-const AVATAR_COLORS = [
-  palette.green[600],
-  palette.amber[700],
-  palette.blue[500],
-  palette.red[600],
-  palette.blue[900],
-  palette.green[900],
-];
-
 function colorForTitle(title: string) {
   const sum = Array.from(title).reduce(
     (total, char) => total + char.charCodeAt(0),
     0,
   );
-  return AVATAR_COLORS[sum % AVATAR_COLORS.length];
+  return avatarColors[sum % avatarColors.length];
 }
 
 export function ConversationListItem({
@@ -66,12 +56,9 @@ export function ConversationListItem({
           <Image source={avatarSource} style={styles.avatarImage} />
         ) : (
           <View
-            style={[
-              styles.avatarFallback,
-              { backgroundColor: withAlpha(avatarColor, 0.16) },
-            ]}
+            style={[styles.avatarFallback, { backgroundColor: avatarColor }]}
           >
-            <Text style={[styles.avatarInitial, { color: avatarColor }]}>
+            <Text style={styles.avatarInitial}>
               {title.charAt(0).toUpperCase()}
             </Text>
           </View>
@@ -140,6 +127,7 @@ const styles = StyleSheet.create({
     fontFamily: manrope.bold,
     fontSize: fontSize.xl,
     lineHeight: lineHeight.xl,
+    color: colors.textInverse,
   },
   onlineDot: {
     position: "absolute",

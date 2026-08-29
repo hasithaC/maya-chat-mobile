@@ -6,3 +6,17 @@ export const useConversations = () =>
     queryKey: ['conversations'],
     queryFn: () => conversationsApi.getConversations(),
   });
+
+export const useConversation = (conversationId: string) =>
+  useQuery({
+    queryKey: ['conversations', conversationId],
+    queryFn: () => conversationsApi.getConversation(conversationId),
+    enabled: Boolean(conversationId),
+  });
+
+export const useConversationMessages = (conversationId: string) =>
+  useQuery({
+    queryKey: ['conversations', conversationId, 'messages'],
+    queryFn: () => conversationsApi.getMessages(conversationId),
+    enabled: Boolean(conversationId),
+  });

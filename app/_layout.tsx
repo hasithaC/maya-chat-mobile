@@ -22,6 +22,7 @@ import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {authEvents} from '../src/core/auth/auth-events';
 import {tokenManager} from '../src/core/auth/token-manager';
 import {queryClient} from '../src/core/query/query-client';
+import {authApi} from '../src/domain/auth/api/auth.api';
 import {useAuthStore} from '../src/domain/auth/store/auth.store';
 
 SplashScreen.preventAutoHideAsync();
@@ -50,18 +51,32 @@ export default function RootLayout() {
   const [isHydrated, setIsHydrated] = useState(false);
   const setAccessToken = useAuthStore(s => s.setAccessToken);
   const setAuthenticated = useAuthStore(s => s.setAuthenticated);
+  const setUser = useAuthStore(s => s.setUser);
+  const logout = useAuthStore(s => s.logout);
 
   useEffect(() => {
     if (!fontsLoaded) return;
 
     (async () => {
       const accessToken = await tokenManager.getAccessToken();
-      setAccessToken(accessToken);
-      setAuthenticated(Boolean(accessToken));
+
+      if (accessToken) {
+        setAccessToken(accessToken);
+        try {
+          const user = await authApi.getMe();
+          setUser(user);
+          setAuthenticated(true);
+        } catch {
+          await logout();
+        }
+      } else {
+        setAuthenticated(false);
+      }
+
       setIsHydrated(true);
       await SplashScreen.hideAsync();
     })();
-  }, [fontsLoaded, setAccessToken, setAuthenticated]);
+  }, [fontsLoaded, setAccessToken, setAuthenticated, setUser, logout]);
 
   if (!fontsLoaded || !isHydrated) {
     return null;

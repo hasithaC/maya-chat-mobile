@@ -6,6 +6,7 @@ import type {
   RequestOTPRequest,
   RequestOTPResponse,
   SignUpPayload,
+  User,
   VerifyOTPRequest,
   VerifyOTPResponse,
 } from '../types/auth.types';
@@ -15,6 +16,7 @@ const ENDPOINTS = {
   VERIFY_OTP: '/api/v1/auth/verify-otp',
   LOGIN_WITH_OTP: '/api/v1/auth/login',
   SIGN_UP: '/api/v1/auth/signup',
+  ME: '/api/v1/auth/me',
 };
 
 export const authApi = {
@@ -37,4 +39,6 @@ export const authApi = {
     apiClient
       .post<AuthResponse>(ENDPOINTS.SIGN_UP, payload)
       .then(res => res.data),
+
+  getMe: () => apiClient.get<User>(ENDPOINTS.ME).then(res => res.data),
 };

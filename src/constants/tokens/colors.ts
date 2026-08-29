@@ -63,6 +63,23 @@ export const palette = {
   },
 } as const;
 
+// Dedicated palette for avatar-color cycling (fallback initials), kept
+// separate from `palette` since it doesn't belong to any semantic hue scale.
+export const avatarColors = [
+  "#092328",
+  "#12544F",
+  "#2A835F",
+  "#8BBB92",
+  "#0F2854",
+  "#1C4D8D",
+  "#4988C4",
+  "#BDE8F5",
+  "#0E21A0",
+  "#4D2FB2",
+  "#B153D7",
+  "#F375C2",
+] as const;
+
 export function withAlpha(hex: string, opacity: number): string {
   const normalized = hex.replace("#", "");
   const alpha = Math.round(Math.min(Math.max(opacity, 0), 1) * 255)
@@ -75,6 +92,8 @@ export function withAlpha(hex: string, opacity: number): string {
 export const colors = {
   backgroundPrimary: palette.surface.white, //verified
   backgroundSecondary: palette.surface[300], //verified
+  backgroundSecondaryStrong: palette.border[400],
+  backgroundTertiary: palette.surface[200],
   backgroundAccent: palette.green[200],
   backgroundAccentStrong: palette.green[400],
 
