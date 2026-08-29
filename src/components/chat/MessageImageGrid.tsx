@@ -31,6 +31,15 @@ const shimmerGray: string[] = [
   colors.backgroundSecondary,
 ];
 
+function isLocalUri(uri: string) {
+  return (
+    uri.startsWith("file://") ||
+    uri.startsWith("content://") ||
+    uri.startsWith("ph://") ||
+    uri.startsWith("assets-library://")
+  );
+}
+
 function GridImage({ uri, width, height }: GridImageProps) {
   const [localUri, setLocalUri] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
@@ -45,6 +54,14 @@ function GridImage({ uri, width, height }: GridImageProps) {
     let cancelled = false;
     setLocalUri(null);
     setFailed(false);
+
+    // A locally-picked image (still uploading, or shown optimistically
+    // before a real S3 url exists) is already a usable local URI — no
+    // presign-download round trip needed.
+    if (isLocalUri(uri)) {
+      setLocalUri(uri);
+      return;
+    }
 
     downloadAttachment(uri).then((result) => {
       if (cancelled) return;

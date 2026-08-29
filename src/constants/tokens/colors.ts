@@ -96,13 +96,17 @@ export const colors = {
   backgroundTertiary: palette.surface[200],
   backgroundAccent: palette.green[200],
   backgroundAccentStrong: palette.green[400],
+  backgroundInverse: palette.surface.black,
+  backgroundInverseSecondary: withAlpha(palette.surface.white, 0.2),
+  scrim: withAlpha(palette.surface.black, 0.4),
 
   textPrimary: palette.ink[900], //verified
   textSecondary: palette.ink[500], //verified
   textInverse: palette.surface.white,
+  textInverseSecondary: withAlpha(palette.surface.white, 0.6),
   textLink: palette.green[900],
   textAccent: palette.green[600],
-
+ 
   border: palette.border[300], //verified
   borderStrong: palette.border[700],
   borderAccent: palette.green[600], //verified

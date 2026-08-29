@@ -3,6 +3,7 @@ import { HugeiconsIcon } from "@hugeicons/react-native";
 import mayaAvatar from "@/assets/images/avatars/maya-avatar.png";
 import emptyThreadImage from "@/assets/images/states/empty-conversation-thread.png";
 import { useQueryClient } from "@tanstack/react-query";
+import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import type { ReactNode } from "react";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -53,6 +54,8 @@ import type {
   ConversationMessage,
 } from "../../../src/domain/conversations/types/conversations.types";
 import { getConversationDisplay } from "../../../src/domain/conversations/utils/conversation-display";
+import { useAttachmentDraftStore } from "../../../src/domain/attachments/store/attachment-draft.store";
+import { uploadAttachment } from "../../../src/domain/attachments/utils/upload-attachment";
 import {
   joinConversation,
   leaveConversation,
@@ -265,6 +268,9 @@ export default function ConversationScreen() {
   const stopTypingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingTempIdRef = useRef<Map<string, number>>(new Map());
   const markedReadIdsRef = useRef<Set<number>>(new Set());
+  const pendingUploadRef = useRef<
+    Map<number, { localUri: string; fileName: string; contentType: string }[]>
+  >(new Map());
   const listRef = useRef<FlatList<Segment>>(null);
 
   const currentUserId = useAuthStore((state) => state.user?.id);
@@ -452,9 +458,161 @@ export default function ConversationScreen() {
     requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
   }, [draft, id, currentUserId, queryClient]);
 
+  const sendImageAttachment = useCallback(
+    async (optimisticId: number, conversationId: string) => {
+      const pendingList = pendingUploadRef.current.get(optimisticId);
+      if (!pendingList || pendingList.length === 0) return;
+
+      const messagesQueryKey = ["conversations", conversationId, "messages"];
+      const caption =
+        queryClient
+          .getQueryData<ConversationMessage[]>(messagesQueryKey)
+          ?.find((message) => message.id === optimisticId)?.content ?? "";
+
+      const results = await Promise.all(
+        pendingList.map((pending) =>
+          uploadAttachment(
+            pending.localUri,
+            pending.contentType,
+            Number(conversationId),
+            pending.fileName,
+          ),
+        ),
+      );
+
+      if (results.some((result) => !result.success)) {
+        setPendingStatusById((prev) => new Map(prev).set(optimisticId, "failed"));
+        return;
+      }
+
+      const uploadedAttachments: Attachment[] = results.map((result, index) => ({
+        url: (result as { success: true; url: string }).url,
+        type: "IMAGE",
+        name: pendingList[index].fileName,
+        size: 0,
+      }));
+
+      const tempId = `temp-${Date.now()}`;
+      pendingTempIdRef.current.set(tempId, optimisticId);
+
+      queryClient.setQueryData<ConversationMessage[]>(messagesQueryKey, (old) =>
+        (old ?? []).map((message) =>
+          message.id === optimisticId
+            ? { ...message, attachments: uploadedAttachments }
+            : message,
+        ),
+      );
+
+      sendMessage({
+        conversationId,
+        content: caption,
+        tempId,
+        type: "IMAGE",
+        attachments: uploadedAttachments,
+      });
+    },
+    [queryClient],
+  );
+
+  const handleSendImages = useCallback(
+    (assets: ImagePicker.ImagePickerAsset[], caption: string) => {
+      if (!id || assets.length === 0) return;
+
+      const optimisticId = -Date.now();
+      const pendingList = assets.map((asset, index) => ({
+        localUri: asset.uri,
+        fileName: asset.fileName ?? `image-${Date.now()}-${index}.jpg`,
+        contentType: asset.mimeType ?? "image/jpeg",
+      }));
+
+      const optimisticMessage: ConversationMessage = {
+        id: optimisticId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        deletedAt: null,
+        conversationId: Number(id),
+        senderId: currentUserId ?? "",
+        type: "IMAGE",
+        status: "SENDING",
+        content: caption,
+        attachments: assets.map((asset, index) => ({
+          url: asset.uri,
+          type: "IMAGE",
+          name: pendingList[index].fileName,
+          size: asset.fileSize ?? 0,
+        })),
+        metadata: undefined,
+        isEdited: false,
+        editedAt: null,
+        isPinned: false,
+        pinnedAt: null,
+        deliveredAt: null,
+        readAt: null,
+      };
+
+      pendingUploadRef.current.set(optimisticId, pendingList);
+      queryClient.setQueryData<ConversationMessage[]>(
+        ["conversations", id, "messages"],
+        (old) => [...(old ?? []), optimisticMessage],
+      );
+      setPendingStatusById((prev) => new Map(prev).set(optimisticId, "sending"));
+      requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
+
+      sendImageAttachment(optimisticId, id);
+    },
+    [id, currentUserId, queryClient, sendImageAttachment],
+  );
+
+  const handlePickImage = useCallback(async () => {
+    if (!id) return;
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) return;
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      quality: 0.8,
+      allowsMultipleSelection: true,
+      selectionLimit: 10,
+      // Android's default multi-select picker needs Android 13+ (or 11-12
+      // with a Google Play system update) and silently degrades to
+      // single-select where that's unavailable — the legacy picker works
+      // consistently across all Android versions.
+      legacy: true,
+    });
+    if (result.canceled || result.assets.length === 0) return;
+
+    // Android's legacy picker (needed above for reliable multi-select)
+    // hardcodes an "any file type" intent internally and only hints at
+    // images via MIME type — some file-browser apps ignore that hint, so
+    // filter out anything that isn't actually an image.
+    const imageAssets = result.assets.filter((asset) =>
+      (asset.mimeType ?? "").startsWith("image/"),
+    );
+    if (imageAssets.length === 0) return;
+
+    useAttachmentDraftStore.getState().setPickedAssets(id, imageAssets);
+    router.push(ROUTES.attachmentPreview);
+  }, [id]);
+
+  const attachmentSendRequest = useAttachmentDraftStore((state) => state.sendRequest);
+
+  useEffect(() => {
+    if (!attachmentSendRequest || attachmentSendRequest.conversationId !== id) return;
+    handleSendImages(attachmentSendRequest.assets, attachmentSendRequest.caption);
+    useAttachmentDraftStore.getState().clearSendRequest();
+  }, [attachmentSendRequest, id, handleSendImages]);
+
   const handleRetry = useCallback(
     (message: ConversationMessage) => {
       if (!id) return;
+
+      if (pendingUploadRef.current.has(message.id)) {
+        setPendingStatusById((prev) => new Map(prev).set(message.id, "sending"));
+        sendImageAttachment(message.id, id);
+        return;
+      }
+
       const tempId = `temp-${Date.now()}`;
       pendingTempIdRef.current.set(tempId, message.id);
       setPendingStatusById((prev) => new Map(prev).set(message.id, "sending"));
@@ -465,7 +623,7 @@ export default function ConversationScreen() {
         type: message.type,
       });
     },
-    [id],
+    [id, sendImageAttachment],
   );
 
   useEffect(() => {
@@ -626,12 +784,10 @@ export default function ConversationScreen() {
 
         <View style={{...styles.body,backgroundColor: colors.backgroundTertiary}}>
           <Animated.View
-            style={[styles.absoluteFill, { opacity: loadingOpacity, padding: spacing.lg }]}
+            style={[styles.absoluteFill, { opacity: loadingOpacity }]}
             pointerEvents={isPending ? "auto" : "none"}
           >
-            <View style={styles.scrollContent}>
-              <ConversationShimmer />
-            </View>
+            <ConversationShimmer />
           </Animated.View>
 
           <Animated.View style={[styles.body, { opacity: contentOpacity }]}>
@@ -673,6 +829,7 @@ export default function ConversationScreen() {
             value={draft}
             onChangeText={handleDraftChange}
             onSend={handleSend}
+            onCameraPress={handlePickImage}
           />
         </View>
       </KeyboardAvoidingView>
@@ -699,6 +856,7 @@ const styles = StyleSheet.create({
   absoluteFill: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: "flex-end",
+    overflow: "hidden",
   },
   scroll: {
     flex: 1,

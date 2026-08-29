@@ -36,7 +36,14 @@
       "expo-secure-store",
       "expo-font",
       "expo-router",
-      "expo-audio"
+      "expo-audio",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to send images in chat.",
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to take photos for chat."
+        }
+      ]
     ]
   }
 }

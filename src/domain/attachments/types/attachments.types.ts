@@ -25,3 +25,31 @@ export interface DownloadAttachmentFailure {
 }
 
 export type DownloadAttachmentResult = DownloadAttachmentSuccess | DownloadAttachmentFailure;
+
+export interface PresignUploadSuccess {
+  success: true;
+  uploadUrl: string;
+  fileUrl: string;
+}
+
+export interface PresignUploadFailure {
+  success: false;
+  uploadUrl: '';
+  fileUrl: '';
+  error: string;
+}
+
+export type PresignUploadResult = PresignUploadSuccess | PresignUploadFailure;
+
+export interface UploadAttachmentSuccess {
+  success: true;
+  url: string;
+}
+
+export interface UploadAttachmentFailure {
+  success: false;
+  url: '';
+  error: string;
+}
+
+export type UploadAttachmentResult = UploadAttachmentSuccess | UploadAttachmentFailure;
