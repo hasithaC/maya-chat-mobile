@@ -51,6 +51,7 @@ import type {
   ConversationMessage,
 } from "../../../src/domain/conversations/types/conversations.types";
 import { getConversationDisplay } from "../../../src/domain/conversations/utils/conversation-display";
+import { usePresenceStore } from "../../../src/core/socket/presence.store";
 import { useFadeTransition } from "../../../src/hooks/useFadeTransition";
 import { formatDateLabel, formatTime } from "../../../src/utils/date";
 
@@ -204,6 +205,7 @@ export default function ConversationScreen() {
   const [draft, setDraft] = useState("");
 
   const currentUserId = useAuthStore((state) => state.user?.id);
+  const onlineUserIds = usePresenceStore((state) => state.onlineUserIds);
   const { data: conversation, isPending: isConversationPending } = useConversation(id);
   const {
     data: messages,
@@ -286,7 +288,14 @@ export default function ConversationScreen() {
           <ConversationHeader
             avatarSource={header.avatarSource}
             title={header.title}
-            status={conversation?.isGroup ? "Group" : "Online"}
+            status={
+              conversation?.isGroup
+                ? "Group"
+                : header.otherParticipantId &&
+                    onlineUserIds.has(header.otherParticipantId)
+                  ? "Online"
+                  : "Offline"
+            }
             loading={isConversationPending}
             trailing={
               <Pressable style={styles.moreButton} hitSlop={minHitSlop}>
@@ -300,9 +309,9 @@ export default function ConversationScreen() {
           />
         </View>
 
-        <View style={{...styles.body, paddingHorizontal: spacing.lg,backgroundColor: colors.backgroundTertiary}}>
+        <View style={{...styles.body,backgroundColor: colors.backgroundTertiary}}>
           <Animated.View
-            style={[styles.absoluteFill, { opacity: loadingOpacity }]}
+            style={[styles.absoluteFill, { opacity: loadingOpacity, padding: spacing.lg }]}
             pointerEvents={isPending ? "auto" : "none"}
           >
             <View style={styles.scrollContent}>
@@ -381,7 +390,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     gap: spacing.md,
-    paddingVertical: spacing.lg,
+    padding: spacing.lg,
   },
   cardText: {
     fontFamily: geist.regular,

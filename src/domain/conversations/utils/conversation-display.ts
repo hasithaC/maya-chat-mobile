@@ -5,6 +5,7 @@ import type { Conversation } from "../types/conversations.types";
 export interface ConversationDisplay {
   title: string;
   avatarSource?: ImageSourcePropType;
+  otherParticipantId?: string;
 }
 
 export function getConversationDisplay(
@@ -12,9 +13,16 @@ export function getConversationDisplay(
   currentUserId?: string,
 ): ConversationDisplay {
   const isMaya = conversation.type === "MAYA";
+  const other = conversation.participants.find(
+    (participant) => participant.userId !== currentUserId,
+  );
 
   if (isMaya) {
-    return { title: "Maya - Personal Assistant", avatarSource: mayaAvatarLarge };
+    return {
+      title: "Maya - Personal Assistant",
+      avatarSource: mayaAvatarLarge,
+      otherParticipantId: other?.userId,
+    };
   }
 
   if (conversation.isGroup) {
@@ -28,15 +36,12 @@ export function getConversationDisplay(
     };
   }
 
-  const other = conversation.participants.find(
-    (participant) => participant.userId !== currentUserId,
-  )?.user;
-
   return {
-    title: other?.fullName ?? "Unknown",
+    title: other?.user.fullName ?? "Unknown",
     avatarSource:
-      other && typeof other.avatar === "string"
-        ? { uri: other.avatar }
+      other && typeof other.user.avatar === "string"
+        ? { uri: other.user.avatar }
         : undefined,
+    otherParticipantId: other?.userId,
   };
 }

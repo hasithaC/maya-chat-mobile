@@ -1,5 +1,6 @@
 import {io, type Socket} from 'socket.io-client';
 import {CHAT_SOCKET_URL} from './config';
+import {usePresenceStore} from './presence.store';
 
 let socket: Socket | null = null;
 
@@ -16,6 +17,7 @@ export const initChatSocket = (jwt: string) => {
 
   socket.on('connect', () => {
     if (__DEV__) console.log('[SOCKET CONNECTED]', socket?.id);
+    requestOnlineUsers();
   });
 
   socket.on('connected', data => {
@@ -34,6 +36,14 @@ export const initChatSocket = (jwt: string) => {
     if (__DEV__) console.log('[SOCKET EVENT]', event, payload);
   });
 
+  socket.on(
+    'online_users',
+    (payload: {count: number; timestamp: string; userIds: string[]}) => {
+      if (__DEV__) console.log('[SOCKET ONLINE USERS]', payload);
+      usePresenceStore.getState().setOnlineUserIds(payload.userIds ?? []);
+    },
+  );
+
   return socket;
 };
 
@@ -42,6 +52,7 @@ export const disconnectChatSocket = () => {
   if (__DEV__) console.log('[SOCKET DISCONNECTING]', socket.id);
   socket.disconnect();
   socket = null;
+  usePresenceStore.getState().setOnlineUserIds([]);
 };
 
 export const getChatSocket = () => socket;

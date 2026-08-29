@@ -38,6 +38,7 @@ import {
   spacing,
 } from "../../../src/constants/tokens";
 import { ROUTES } from "../../../src/constants/routes";
+import { usePresenceStore } from "../../../src/core/socket/presence.store";
 import { useAuthStore } from "../../../src/domain/auth/store/auth.store";
 import { useConversations } from "../../../src/domain/conversations/hooks/conversations.hooks";
 import type { Conversation } from "../../../src/domain/conversations/types/conversations.types";
@@ -74,6 +75,7 @@ export default function ChatsScreen() {
   const [newSheetVisible, setNewSheetVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const currentUserId = useAuthStore((state) => state.user?.id);
+  const onlineUserIds = usePresenceStore((state) => state.onlineUserIds);
   const {
     data: conversations,
     isPending,
@@ -190,7 +192,10 @@ export default function ChatsScreen() {
               showsVerticalScrollIndicator={false}
             >
               {filteredConversations.map(
-                ({ conversation, title, avatarSource }, index) => (
+                (
+                  { conversation, title, avatarSource, otherParticipantId },
+                  index,
+                ) => (
                   <Reanimated.View
                     key={conversation.id}
                     layout={LinearTransition}
@@ -200,6 +205,11 @@ export default function ChatsScreen() {
                     <ConversationListItem
                       title={title}
                       avatarSource={avatarSource}
+                      online={
+                        otherParticipantId
+                          ? onlineUserIds.has(otherParticipantId)
+                          : false
+                      }
                       time={formatTime(conversation.lastMessageAt)}
                       message={
                         typeof conversation.lastMessagePreview === "string"
