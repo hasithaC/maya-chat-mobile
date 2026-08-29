@@ -1,4 +1,4 @@
-import {useQuery} from '@tanstack/react-query';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {conversationsApi} from '../api/conversations.api';
 
 export const useConversations = () =>
@@ -21,3 +21,14 @@ export const useConversationMessages = (conversationId: string) =>
     enabled: Boolean(conversationId),
     refetchOnMount: 'always',
   });
+
+export const useCreateConversation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: conversationsApi.createConversation,
+    onSuccess: () => {
+      queryClient.invalidateQueries({queryKey: ['conversations']});
+    },
+  });
+};

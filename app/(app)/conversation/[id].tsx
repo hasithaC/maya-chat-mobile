@@ -279,11 +279,11 @@ export default function ConversationScreen() {
   const queryClient = useQueryClient();
   const { data: conversation, isPending: isConversationPending } = useConversation(id);
   const { data: contactsData } = useContacts();
-  const contactNameByPhone = useMemo(
+  const contactNameByUserId = useMemo(
     () =>
       new Map(
         (contactsData?.contacts ?? []).map((contact) => [
-          contact.contactUser.phone,
+          String(contact.contactUserId),
           contact.displayName,
         ]),
       ),
@@ -696,7 +696,7 @@ export default function ConversationScreen() {
   };
 
   const header = conversation
-    ? getConversationDisplay(conversation, currentUserId, contactNameByPhone)
+    ? getConversationDisplay(conversation, currentUserId, contactNameByUserId)
     : { title: "Chat", avatarSource: undefined };
 
   const participantsById = useMemo(() => {

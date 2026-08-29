@@ -54,6 +54,12 @@ export interface Conversation {
   unreadCount?: number;
 }
 
+export interface CreateConversationRequest {
+  contactUserId: number;
+}
+
+export type CreateConversationResponse = Conversation;
+
 export interface ConversationMessage {
   id: number;
   createdAt: string;

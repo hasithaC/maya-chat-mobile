@@ -43,7 +43,10 @@ import { requestOnlineUsers } from "../../../src/core/socket/chat-socket";
 import { usePresenceStore } from "../../../src/core/socket/presence.store";
 import { useAuthStore } from "../../../src/domain/auth/store/auth.store";
 import { useContacts } from "../../../src/domain/contacts/hooks/contacts.hooks";
-import { useConversations } from "../../../src/domain/conversations/hooks/conversations.hooks";
+import {
+  useConversations,
+  useCreateConversation,
+} from "../../../src/domain/conversations/hooks/conversations.hooks";
 import type { Conversation } from "../../../src/domain/conversations/types/conversations.types";
 import { getConversationDisplay } from "../../../src/domain/conversations/utils/conversation-display";
 import { useFadeTransition } from "../../../src/hooks/useFadeTransition";
@@ -91,6 +94,7 @@ export default function ChatsScreen() {
     loadingDuration: 250,
   });
   const handleTalkToMaya = useTalkToMaya();
+  const createConversation = useCreateConversation();
   const { data: contactsData } = useContacts();
   const myContacts = contactsData?.contacts ?? [];
 
@@ -98,8 +102,14 @@ export default function ChatsScreen() {
     requestOnlineUsers();
   }, []);
 
-  const contactNameByPhone = useMemo(
-    () => new Map(myContacts.map((contact) => [contact.contactUser.phone, contact.displayName])),
+  const contactNameByUserId = useMemo(
+    () =>
+      new Map(
+        myContacts.map((contact) => [
+          String(contact.contactUserId),
+          contact.displayName,
+        ]),
+      ),
     [myContacts],
   );
 
@@ -107,9 +117,9 @@ export default function ChatsScreen() {
     () =>
       (conversations ?? []).map((conversation) => ({
         conversation,
-        ...getConversationDisplay(conversation, currentUserId, contactNameByPhone),
+        ...getConversationDisplay(conversation, currentUserId, contactNameByUserId),
       })),
-    [conversations, currentUserId, contactNameByPhone],
+    [conversations, currentUserId, contactNameByUserId],
   );
 
   const categoryConversations = displayConversations.filter(({ conversation }) =>
@@ -128,28 +138,31 @@ export default function ChatsScreen() {
 
   const selectedFilterLabel = FILTERS.find(({ key }) => key === filter)?.label ?? "";
 
-  // Contacts and conversation participants come from two different id
-  // systems (numeric contactUserId vs. UUID userId), so there's no shared
-  // id to match on — phone number is the one field both carry.
-  const conversationPhones = useMemo(() => {
-    const phones = new Set<string>();
+  const conversationParticipantIds = useMemo(() => {
+    const ids = new Set<string>();
     (conversations ?? []).forEach((conversation) => {
       conversation.participants.forEach((participant) => {
-        if (participant.userId !== currentUserId && participant.user.phone) {
-          phones.add(participant.user.phone);
+        if (participant.userId !== currentUserId) {
+          ids.add(participant.userId);
         }
       });
     });
-    return phones;
+    return ids;
   }, [conversations, currentUserId]);
 
   const contactsWithoutConversation = useMemo(
     () =>
       myContacts.filter(
-        (contact) => !conversationPhones.has(contact.contactUser.phone),
+        (contact) =>
+          !conversationParticipantIds.has(String(contact.contactUserId)),
       ),
-    [myContacts, conversationPhones],
+    [myContacts, conversationParticipantIds],
   );
+
+  const handleStartConversation = async (contactUserId: number) => {
+    const conversation = await createConversation.mutateAsync({ contactUserId });
+    router.push(ROUTES.conversation(String(conversation.id)));
+  };
 
   return (
     <View style={[styles.container, containerInsetStyle]}>
@@ -280,6 +293,9 @@ export default function ChatsScreen() {
                           contact.contactUser.avatar
                             ? { uri: contact.contactUser.avatar }
                             : undefined
+                        }
+                        onStartChat={() =>
+                          handleStartConversation(contact.contactUserId)
                         }
                         showDivider={
                           index < contactsWithoutConversation.length - 1

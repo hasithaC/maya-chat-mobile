@@ -1,5 +1,10 @@
 import {apiClient} from '../../../core/api/api-client';
-import type {Conversation, ConversationMessage} from '../types/conversations.types';
+import type {
+  Conversation,
+  ConversationMessage,
+  CreateConversationRequest,
+  CreateConversationResponse,
+} from '../types/conversations.types';
 
 const ENDPOINTS = {
   GET_CONVERSATIONS: '/api/v1/conversations',
@@ -23,5 +28,10 @@ export const conversationsApi = {
   getMessages: (conversationId: number | string) =>
     apiClient
       .get<ConversationMessage[]>(ENDPOINTS.GET_MESSAGES(conversationId))
+      .then(res => res.data),
+
+  createConversation: (data: CreateConversationRequest) =>
+    apiClient
+      .post<CreateConversationResponse>(ENDPOINTS.GET_CONVERSATIONS, data)
       .then(res => res.data),
 };

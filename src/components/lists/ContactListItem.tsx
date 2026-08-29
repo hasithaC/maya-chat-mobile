@@ -1,14 +1,28 @@
+import { BubbleChatAddIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react-native";
+import { useEffect, useRef, useState } from "react";
 import type { ImageSourcePropType } from "react-native";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Animated,
+  Easing,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import {
   avatarSize,
   borderWidth,
   colors,
+  controlHeight,
   fontSize,
   geist,
   getAvatarColor,
+  iconSize,
   lineHeight,
   manrope,
+  minHitSlop,
   spacing,
 } from "../../constants/tokens";
 
@@ -21,6 +35,8 @@ interface ContactListItemProps {
   query?: string;
   onPress?: () => void;
   showDivider?: boolean;
+  // Shows a trailing "start chat" icon button that pulses while pending.
+  onStartChat?: () => void | Promise<void>;
 }
 
 function HighlightedName({ name, query }: { name: string; query?: string }) {
@@ -55,12 +71,60 @@ export function ContactListItem({
   email,
   query,
   onPress,
+  showDivider,
+  onStartChat,
 }: ContactListItemProps) {
   const avatarColor = getAvatarColor(id != null ? String(id) : name);
   const subtitle = phone || email || "";
+  const [pending, setPending] = useState(false);
+  const scale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (!pending) {
+      scale.setValue(1);
+      return;
+    }
+
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(scale, {
+          toValue: 1.15,
+          duration: 450,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(scale, {
+          toValue: 1,
+          duration: 450,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+
+    return () => loop.stop();
+  }, [pending, scale]);
+
+  const handleStartChat = async () => {
+    if (pending || !onStartChat) return;
+    setPending(true);
+    try {
+      await onStartChat();
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const scaleStyle = {
+    transform: [{ scale }],
+  };
 
   return (
-    <Pressable style={[styles.container, styles.divider]} onPress={onPress}>
+    <Pressable
+      style={[styles.container, showDivider !== false && styles.divider]}
+      onPress={onPress}
+    >
       {avatarSource ? (
         <Image source={avatarSource} style={styles.avatarImage} />
       ) : (
@@ -74,6 +138,23 @@ export function ContactListItem({
         <HighlightedName name={name} query={query} />
         <Text style={styles.phone}>{subtitle}</Text>
       </View>
+
+      {onStartChat ? (
+        <Pressable
+          style={styles.startChatButton}
+          onPress={handleStartChat}
+          disabled={pending}
+          hitSlop={minHitSlop}
+        >
+          <Animated.View style={scaleStyle}>
+            <HugeiconsIcon
+              icon={BubbleChatAddIcon}
+              size={iconSize.sm}
+              color={colors.textInverse}
+            />
+          </Animated.View>
+        </Pressable>
+      ) : null}
     </Pressable>
   );
 }
@@ -126,5 +207,13 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     lineHeight: lineHeight.xs,
     color: colors.textSecondary,
+  },
+  startChatButton: {
+    width: controlHeight.xs,
+    height: controlHeight.xs,
+    borderRadius: controlHeight.xs / 2,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.buttonPrimary,
   },
 });

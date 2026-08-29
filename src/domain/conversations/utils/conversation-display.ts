@@ -11,9 +11,8 @@ export interface ConversationDisplay {
 export function getConversationDisplay(
   conversation: Conversation,
   currentUserId?: string,
-  // Contacts and conversation participants come from different id systems
-  // (see chats.tsx), so a saved nickname is looked up by phone number.
-  contactNameByPhone?: Map<string, string>,
+  // Maps a participant's userId to their saved contact nickname.
+  contactNameByUserId?: Map<string, string>,
 ): ConversationDisplay {
   const isMaya = conversation.type === "MAYA";
   const other = conversation.participants.find(
@@ -39,7 +38,7 @@ export function getConversationDisplay(
     };
   }
 
-  const savedName = other && contactNameByPhone?.get(other.user.phone);
+  const savedName = other && contactNameByUserId?.get(other.userId);
 
   return {
     title: savedName || other?.user.fullName || "Unknown",
