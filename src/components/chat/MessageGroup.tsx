@@ -2,10 +2,10 @@ import type { ReactNode } from "react";
 import type { ImageSourcePropType } from "react-native";
 import { Image, StyleSheet, Text, View } from "react-native";
 import {
-  avatarColors,
   avatarSize,
   colors,
   fontSize,
+  getAvatarColor,
   lineHeight,
   manrope,
   spacing,
@@ -13,24 +13,18 @@ import {
 
 interface MessageGroupProps {
   avatarSource?: ImageSourcePropType;
+  userId?: string;
   name: string;
   children: ReactNode;
 }
 
-function colorForName(name: string) {
-  const sum = Array.from(name).reduce(
-    (total, char) => total + char.charCodeAt(0),
-    0,
-  );
-  return avatarColors[sum % avatarColors.length];
-}
-
 export function MessageGroup({
   avatarSource,
+  userId,
   name,
   children,
 }: MessageGroupProps) {
-  const avatarColor = colorForName(name);
+  const avatarColor = getAvatarColor(userId ?? name);
 
   return (
     <View style={styles.container}>

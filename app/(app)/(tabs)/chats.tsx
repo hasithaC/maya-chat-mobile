@@ -18,6 +18,7 @@ import Reanimated, {
 } from "react-native-reanimated";
 import {
   ChatsShimmer,
+  ContactListItem,
   ConversationListItem,
   EmptyState,
   ErrorState,
@@ -41,6 +42,7 @@ import { ROUTES } from "../../../src/constants/routes";
 import { requestOnlineUsers } from "../../../src/core/socket/chat-socket";
 import { usePresenceStore } from "../../../src/core/socket/presence.store";
 import { useAuthStore } from "../../../src/domain/auth/store/auth.store";
+import { useContacts } from "../../../src/domain/contacts/hooks/contacts.hooks";
 import { useConversations } from "../../../src/domain/conversations/hooks/conversations.hooks";
 import type { Conversation } from "../../../src/domain/conversations/types/conversations.types";
 import { getConversationDisplay } from "../../../src/domain/conversations/utils/conversation-display";
@@ -89,18 +91,25 @@ export default function ChatsScreen() {
     loadingDuration: 250,
   });
   const handleTalkToMaya = useTalkToMaya();
+  const { data: contactsData } = useContacts();
+  const myContacts = contactsData?.contacts ?? [];
 
   useEffect(() => {
     requestOnlineUsers();
   }, []);
 
+  const contactNameByPhone = useMemo(
+    () => new Map(myContacts.map((contact) => [contact.contactUser.phone, contact.displayName])),
+    [myContacts],
+  );
+
   const displayConversations = useMemo(
     () =>
       (conversations ?? []).map((conversation) => ({
         conversation,
-        ...getConversationDisplay(conversation, currentUserId),
+        ...getConversationDisplay(conversation, currentUserId, contactNameByPhone),
       })),
-    [conversations, currentUserId],
+    [conversations, currentUserId, contactNameByPhone],
   );
 
   const categoryConversations = displayConversations.filter(({ conversation }) =>
@@ -118,6 +127,29 @@ export default function ChatsScreen() {
     : categoryConversations;
 
   const selectedFilterLabel = FILTERS.find(({ key }) => key === filter)?.label ?? "";
+
+  // Contacts and conversation participants come from two different id
+  // systems (numeric contactUserId vs. UUID userId), so there's no shared
+  // id to match on — phone number is the one field both carry.
+  const conversationPhones = useMemo(() => {
+    const phones = new Set<string>();
+    (conversations ?? []).forEach((conversation) => {
+      conversation.participants.forEach((participant) => {
+        if (participant.userId !== currentUserId && participant.user.phone) {
+          phones.add(participant.user.phone);
+        }
+      });
+    });
+    return phones;
+  }, [conversations, currentUserId]);
+
+  const contactsWithoutConversation = useMemo(
+    () =>
+      myContacts.filter(
+        (contact) => !conversationPhones.has(contact.contactUser.phone),
+      ),
+    [myContacts, conversationPhones],
+  );
 
   return (
     <View style={[styles.container, containerInsetStyle]}>
@@ -174,65 +206,89 @@ export default function ChatsScreen() {
                 onRetry={() => refetch()}
               />
             </View>
-          ) : displayConversations.length === 0 ? (
-            <View style={styles.stateContainer}>
-              <EmptyState
-                image={emptyConversationImage}
-                title="No conversations yet"
-                subtitle="Start a new chat with Maya or add a contact to get going."
-              />
-            </View>
-          ) : filteredConversations.length === 0 ? (
-            <View style={styles.stateContainer}>
-              <NoSearchResults
-                title="No matches found"
-                subtitle={
-                  query
-                    ? `We couldn't find any conversations matching "${searchQuery}".`
-                    : `You don't have any conversations under "${selectedFilterLabel}" yet.`
-                }
-              />
-            </View>
           ) : (
             <ScrollView
               style={styles.scroll}
               contentContainerStyle={styles.scrollContent}
               showsVerticalScrollIndicator={false}
             >
-              {filteredConversations.map(
-                (
-                  { conversation, title, avatarSource, otherParticipantId },
-                  index,
-                ) => (
-                  <Reanimated.View
-                    key={conversation.id}
-                    layout={LinearTransition}
-                    entering={FadeIn.delay(index * 40).duration(250)}
-                    exiting={FadeOut}
-                  >
-                    <ConversationListItem
-                      title={title}
-                      avatarSource={avatarSource}
-                      online={
-                        otherParticipantId
-                          ? onlineUserIds.has(otherParticipantId)
-                          : false
-                      }
-                      time={formatTime(conversation.lastMessageAt)}
-                      message={
-                        typeof conversation.lastMessagePreview === "string"
-                          ? conversation.lastMessagePreview
-                          : "No messages yet"
-                      }
-                      unreadCount={conversation.unreadCount ?? 0}
-                      showDivider={index < filteredConversations.length - 1}
-                      onPress={() =>
-                        router.push(ROUTES.conversation(String(conversation.id)))
-                      }
-                    />
-                  </Reanimated.View>
-                ),
+              {displayConversations.length === 0 ? (
+                <EmptyState
+                  image={emptyConversationImage}
+                  title="No conversations yet"
+                  subtitle="Start a new chat with Maya or add a contact to get going."
+                />
+              ) : filteredConversations.length === 0 ? (
+                <NoSearchResults
+                  title="No matches found"
+                  subtitle={
+                    query
+                      ? `We couldn't find any conversations matching "${searchQuery}".`
+                      : `You don't have any conversations under "${selectedFilterLabel}" yet.`
+                  }
+                />
+              ) : (
+                filteredConversations.map(
+                  (
+                    { conversation, title, avatarSource, otherParticipantId },
+                    index,
+                  ) => (
+                    <Reanimated.View
+                      key={conversation.id}
+                      layout={LinearTransition}
+                      entering={FadeIn.delay(index * 40).duration(250)}
+                      exiting={FadeOut}
+                    >
+                      <ConversationListItem
+                        title={title}
+                        avatarSource={avatarSource}
+                        id={otherParticipantId ?? conversation.id}
+                        online={
+                          otherParticipantId
+                            ? onlineUserIds.has(otherParticipantId)
+                            : false
+                        }
+                        time={formatTime(conversation.lastMessageAt)}
+                        message={
+                          typeof conversation.lastMessagePreview === "string"
+                            ? conversation.lastMessagePreview
+                            : "No messages yet"
+                        }
+                        unreadCount={conversation.unreadCount ?? 0}
+                        showDivider={index < filteredConversations.length - 1}
+                        onPress={() =>
+                          router.push(ROUTES.conversation(String(conversation.id)))
+                        }
+                      />
+                    </Reanimated.View>
+                  ),
+                )
               )}
+
+              {contactsWithoutConversation.length > 0 ? (
+                <View style={styles.section}>
+                  <Text style={styles.sectionLabel}>My Contacts</Text>
+                  <View>
+                    {contactsWithoutConversation.map((contact, index) => (
+                      <ContactListItem
+                        key={contact.id}
+                        id={contact.contactUserId}
+                        name={contact.displayName || contact.contactUser.fullName}
+                        phone={contact.contactUser.phone}
+                        email={contact.contactUser.email}
+                        avatarSource={
+                          contact.contactUser.avatar
+                            ? { uri: contact.contactUser.avatar }
+                            : undefined
+                        }
+                        showDivider={
+                          index < contactsWithoutConversation.length - 1
+                        }
+                      />
+                    ))}
+                  </View>
+                </View>
+              ) : null}
             </ScrollView>
           )}
         </Animated.View>
@@ -307,5 +363,15 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingVertical: spacing.lg,
+  },
+  section: {
+    gap: spacing.sm,
+    marginTop: spacing.lg,
+  },
+  sectionLabel: {
+    fontFamily: manrope.regular,
+    fontSize: fontSize.xs,
+    lineHeight: lineHeight.xs,
+    color: colors.textSecondary,
   },
 });

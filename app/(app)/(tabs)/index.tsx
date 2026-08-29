@@ -141,7 +141,11 @@ export default function HomeScreen() {
           title="Upcoming Events"
           count={2}
           footer={
-            <PrimaryPressable size="sm" text="Go to Reminders" onPress={() => {}} />
+            <PrimaryPressable
+              size="sm"
+              text="Go to Reminders"
+              onPress={() => {}}
+            />
           }
         >
           <EventListItem
@@ -167,10 +171,11 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   content: {
-      gap: spacing.lg,
+    gap: spacing.lg,
   },
   container: {
     flex: 1,
+    gap: spacing.xs,
     paddingHorizontal: spacing.lg,
     backgroundColor: colors.backgroundPrimary,
   },

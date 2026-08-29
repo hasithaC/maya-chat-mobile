@@ -3,7 +3,6 @@ import { HugeiconsIcon } from "@hugeicons/react-native";
 import type { ImageSourcePropType } from "react-native";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import {
-  avatarColors,
   avatarSize,
   badgeSize,
   borderRadius,
@@ -11,6 +10,7 @@ import {
   colors,
   fontSize,
   geist,
+  getAvatarColor,
   iconSize,
   lineHeight,
   manrope,
@@ -19,6 +19,7 @@ import {
 
 interface ConversationListItemProps {
   avatarSource?: ImageSourcePropType;
+  id?: string | number;
   online?: boolean;
   title: string;
   time: string;
@@ -29,16 +30,9 @@ interface ConversationListItemProps {
   onPress?: () => void;
 }
 
-function colorForTitle(title: string) {
-  const sum = Array.from(title).reduce(
-    (total, char) => total + char.charCodeAt(0),
-    0,
-  );
-  return avatarColors[sum % avatarColors.length];
-}
-
 export function ConversationListItem({
   avatarSource,
+  id,
   online = false,
   title,
   time,
@@ -47,7 +41,7 @@ export function ConversationListItem({
   unreadCount = 0,
   onPress,
 }: ConversationListItemProps) {
-  const avatarColor = colorForTitle(title);
+  const avatarColor = getAvatarColor(id != null ? String(id) : title);
 
   return (
     <Pressable style={[styles.container, styles.divider]} onPress={onPress}>

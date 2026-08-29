@@ -1,12 +1,12 @@
 import type { ImageSourcePropType } from "react-native";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import {
-  avatarColors,
   avatarSize,
   borderWidth,
   colors,
   fontSize,
   geist,
+  getAvatarColor,
   lineHeight,
   manrope,
   spacing,
@@ -14,19 +14,13 @@ import {
 
 interface ContactListItemProps {
   avatarSource?: ImageSourcePropType;
+  id?: string | number;
   name: string;
-  phone: string;
+  phone?: string;
+  email?: string;
   query?: string;
   onPress?: () => void;
   showDivider?: boolean;
-}
-
-function colorForName(name: string) {
-  const sum = Array.from(name).reduce(
-    (total, char) => total + char.charCodeAt(0),
-    0,
-  );
-  return avatarColors[sum % avatarColors.length];
 }
 
 function HighlightedName({ name, query }: { name: string; query?: string }) {
@@ -55,12 +49,15 @@ function HighlightedName({ name, query }: { name: string; query?: string }) {
 
 export function ContactListItem({
   avatarSource,
+  id,
   name,
   phone,
+  email,
   query,
   onPress,
 }: ContactListItemProps) {
-  const avatarColor = colorForName(name);
+  const avatarColor = getAvatarColor(id != null ? String(id) : name);
+  const subtitle = phone || email || "";
 
   return (
     <Pressable style={[styles.container, styles.divider]} onPress={onPress}>
@@ -75,7 +72,7 @@ export function ContactListItem({
       )}
       <View style={styles.content}>
         <HighlightedName name={name} query={query} />
-        <Text style={styles.phone}>{phone}</Text>
+        <Text style={styles.phone}>{subtitle}</Text>
       </View>
     </Pressable>
   );
@@ -93,14 +90,14 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   avatarImage: {
-    width: avatarSize.md,
-    height: avatarSize.md,
-    borderRadius: avatarSize.md / 2,
+    width: avatarSize.lg,
+    height: avatarSize.lg,
+    borderRadius: avatarSize.lg / 2,
   },
   avatarFallback: {
-    width: avatarSize.md,
-    height: avatarSize.md,
-    borderRadius: avatarSize.md / 2,
+    width: avatarSize.lg,
+    height: avatarSize.lg,
+    borderRadius: avatarSize.lg / 2,
     alignItems: "center",
     justifyContent: "center",
   },

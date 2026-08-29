@@ -54,6 +54,7 @@ import type {
   ConversationMessage,
 } from "../../../src/domain/conversations/types/conversations.types";
 import { getConversationDisplay } from "../../../src/domain/conversations/utils/conversation-display";
+import { useContacts } from "../../../src/domain/contacts/hooks/contacts.hooks";
 import { useAttachmentDraftStore } from "../../../src/domain/attachments/store/attachment-draft.store";
 import { uploadAttachment } from "../../../src/domain/attachments/utils/upload-attachment";
 import {
@@ -277,6 +278,17 @@ export default function ConversationScreen() {
   const onlineUserIds = usePresenceStore((state) => state.onlineUserIds);
   const queryClient = useQueryClient();
   const { data: conversation, isPending: isConversationPending } = useConversation(id);
+  const { data: contactsData } = useContacts();
+  const contactNameByPhone = useMemo(
+    () =>
+      new Map(
+        (contactsData?.contacts ?? []).map((contact) => [
+          contact.contactUser.phone,
+          contact.displayName,
+        ]),
+      ),
+    [contactsData],
+  );
   const {
     data: messages,
     isPending,
@@ -684,7 +696,7 @@ export default function ConversationScreen() {
   };
 
   const header = conversation
-    ? getConversationDisplay(conversation, currentUserId)
+    ? getConversationDisplay(conversation, currentUserId, contactNameByPhone)
     : { title: "Chat", avatarSource: undefined };
 
   const participantsById = useMemo(() => {
@@ -734,6 +746,7 @@ export default function ConversationScreen() {
       return (
         <MessageGroup
           avatarSource={sender?.avatarSource}
+          userId={segment.senderId}
           name={sender?.name ?? "Unknown"}
         >
           {segment.messages.map((message) => (
@@ -758,6 +771,7 @@ export default function ConversationScreen() {
         <View style={{...containerInsetStyle,paddingHorizontal: spacing.lg,}}>
           <ConversationHeader
             avatarSource={header.avatarSource}
+            id={header.otherParticipantId ?? conversation?.id}
             title={header.title}
             status={
               typingUserId

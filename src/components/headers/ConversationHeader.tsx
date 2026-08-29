@@ -6,11 +6,11 @@ import type { ImageSourcePropType } from "react-native";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { Shimmer, ShimmerProvider } from "react-native-fast-shimmer";
 import {
-  avatarColors,
   avatarSize,
   colors,
   controlHeight,
   fontSize,
+  getAvatarColor,
   iconSize,
   lineHeight,
   manrope,
@@ -20,6 +20,7 @@ import {
 
 interface ConversationHeaderProps {
   avatarSource?: ImageSourcePropType;
+  id?: string | number;
   title: string;
   status: string;
   onBack?: () => void;
@@ -33,23 +34,16 @@ const shimmerGray: string[] = [
   colors.backgroundSecondary,
 ];
 
-function colorForTitle(title: string) {
-  const sum = Array.from(title).reduce(
-    (total, char) => total + char.charCodeAt(0),
-    0,
-  );
-  return avatarColors[sum % avatarColors.length];
-}
-
 export function ConversationHeader({
   avatarSource,
+  id,
   title,
   status,
   onBack,
   trailing,
   loading = false,
 }: ConversationHeaderProps) {
-  const avatarColor = colorForTitle(title);
+  const avatarColor = getAvatarColor(id != null ? String(id) : title);
 
   return (
     <View style={styles.container}>

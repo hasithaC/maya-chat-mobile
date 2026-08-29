@@ -7,6 +7,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   BackHeader,
   ContactListItem,
+  ContactListShimmer,
+  NoSearchResults,
   PopupMenu,
   PrimaryPressable,
   PrimarySearchInput,
@@ -25,42 +27,31 @@ import {
   minHitSlop,
   spacing,
 } from "../../src/constants/tokens";
+import {
+  useAddContact,
+  useContacts,
+  useSearchContacts,
+  useUpdateContact,
+} from "../../src/domain/contacts/hooks/contacts.hooks";
+import type {
+  Contact,
+  SearchedUser,
+} from "../../src/domain/contacts/types/contacts.types";
 
-interface Contact {
-  id: string;
-  name: string;
-  phone: string;
-  section: "In Your Contacts" | "Other Users";
-}
-
-const CONTACTS: Contact[] = [
-  {
-    id: "1",
-    name: "Alan Louis",
-    phone: "+94 77 000 1234",
-    section: "In Your Contacts",
-  },
-  {
-    id: "2",
-    name: "Alex Lee",
-    phone: "+94 75 123 4567",
-    section: "In Your Contacts",
-  },
-  {
-    id: "3",
-    name: "Alina Lopez",
-    phone: "+94 71 345 6789",
-    section: "Other Users",
-  },
-  {
-    id: "4",
-    name: "Alvin Lucas",
-    phone: "+94 77 987 6543",
-    section: "Other Users",
-  },
+const SECTIONS: { key: "contacts" | "others"; label: string }[] = [
+  { key: "contacts", label: "In Your Contacts" },
+  { key: "others", label: "Other Users" },
 ];
 
-const SECTIONS: Contact["section"][] = ["In Your Contacts", "Other Users"];
+interface ContactSelection {
+  contactUserId: number;
+  fullName: string;
+  // Only set when this person is already an existing contact — needed to
+  // PATCH /api/v1/contacts/{contactId} (the contact record's own id, not
+  // the contactUserId).
+  contactId: number | null;
+  isFavorite: boolean;
+}
 
 export default function AddContactsScreen() {
   const insets = useSafeAreaInsets();
@@ -69,21 +60,75 @@ export default function AddContactsScreen() {
     paddingBottom: Math.max(insets.bottom, spacing.lg),
   };
   const [query, setQuery] = useState("");
-  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selection, setSelection] = useState<ContactSelection | null>(null);
   const [nickname, setNickname] = useState("");
 
-  const results = CONTACTS.filter(
-    (contact) =>
-      contact.name.toLowerCase().includes(query.toLowerCase()) ||
-      contact.phone.includes(query),
-  );
+  const {
+    data: contactsData,
+    isPending: isContactsPending,
+    isError: isContactsError,
+  } = useContacts();
+  const myContacts = contactsData?.contacts ?? [];
+
+  const { data, isPending, isError } = useSearchContacts(searchTerm);
+  const users = data?.users ?? [];
+  const resultsBySection = {
+    contacts: users.filter((user) => user.isContact),
+    others: users.filter((user) => !user.isContact),
+  };
+
+  const addContact = useAddContact();
+  const updateContact = useUpdateContact();
+  const isExistingContact = selection?.contactId != null;
+
+  const handleSelectSearchResult = (user: SearchedUser) => {
+    const existing = myContacts.find(
+      (contact) => contact.contactUserId === user.id,
+    );
+    setSelection({
+      contactUserId: user.id,
+      fullName: user.displayName || user.fullName,
+      contactId: existing?.id ?? null,
+      isFavorite: existing?.isFavorite ?? false,
+    });
+    setNickname(existing?.displayName || user.displayName || "");
+  };
+
+  const handleSelectContact = (contact: Contact) => {
+    setSelection({
+      contactUserId: contact.contactUserId,
+      fullName: contact.contactUser.fullName,
+      contactId: contact.id,
+      isFavorite: contact.isFavorite,
+    });
+    setNickname(contact.displayName || "");
+  };
 
   const handleClosePreview = () => {
-    setSelectedContact(null);
+    setSelection(null);
     setNickname("");
   };
 
-  const handleAddPerson = () => {
+  const handleSavePerson = async () => {
+    if (!selection) return;
+
+    const displayName = nickname.trim() || selection.fullName;
+
+    if (selection.contactId != null) {
+      await updateContact.mutateAsync({
+        contactId: selection.contactId,
+        displayName,
+        isFavorite: selection.isFavorite,
+      });
+    } else {
+      await addContact.mutateAsync({
+        contactUserId: selection.contactUserId,
+        displayName,
+        isFavorite: false,
+      });
+    }
+
     handleClosePreview();
     router.back();
   };
@@ -108,54 +153,103 @@ export default function AddContactsScreen() {
           placeholder="Search by name or phone number"
           value={query}
           onChangeText={setQuery}
-          onSearch={() => {}}
+          onSearch={setSearchTerm}
         />
       </View>
 
-      {query.length > 0 ? (
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {SECTIONS.map((section) => {
-            const sectionResults = results.filter(
-              (contact) => contact.section === section,
-            );
-            if (sectionResults.length === 0) {
-              return null;
-            }
-            return (
-              <View key={section} style={styles.section}>
-                <Text style={styles.sectionLabel}>{section}</Text>
-                <View>
-                  {sectionResults.map((contact, index) => (
-                    <ContactListItem
-                      key={contact.id}
-                      name={contact.name}
-                      phone={contact.phone}
-                      query={query}
-                      onPress={() => setSelectedContact(contact)}
-                      showDivider={index < sectionResults.length - 1}
-                    />
-                  ))}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {query.length > 0 ? (
+          isPending ? (
+            <ContactListShimmer />
+          ) : isError ? (
+            <NoSearchResults
+              title="Something went wrong"
+              subtitle="We couldn't search contacts right now. Please try again."
+            />
+          ) : users.length === 0 ? (
+            <NoSearchResults
+              title="No matches found"
+              subtitle={`We couldn't find anyone matching "${searchTerm}".`}
+            />
+          ) : (
+            SECTIONS.map(({ key, label }) => {
+              const sectionResults = resultsBySection[key];
+              if (sectionResults.length === 0) {
+                return null;
+              }
+              return (
+                <View key={key} style={styles.section}>
+                  <Text style={styles.sectionLabel}>{label}</Text>
+                  <View>
+                    {sectionResults.map((user, index) => (
+                      <ContactListItem
+                        key={user.id}
+                        id={user.id}
+                        name={user.displayName || user.fullName}
+                        phone={user.phone}
+                        email={user.email}
+                        avatarSource={user.avatar ? { uri: user.avatar } : undefined}
+                        query={query}
+                        onPress={() => handleSelectSearchResult(user)}
+                        showDivider={index < sectionResults.length - 1}
+                      />
+                    ))}
+                  </View>
                 </View>
-              </View>
-            );
-          })}
-        </ScrollView>
-      ) : (
-        <View style={styles.scroll} />
-      )}
+              );
+            })
+          )
+        ) : isContactsPending ? (
+          <ContactListShimmer />
+        ) : isContactsError ? (
+          <NoSearchResults
+            title="Something went wrong"
+            subtitle="We couldn't load your contacts. Please try again."
+          />
+        ) : myContacts.length === 0 ? (
+          <NoSearchResults
+            title="No contacts yet"
+            subtitle="Search for people above to add your first contact."
+          />
+        ) : (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>My Contacts</Text>
+            <View>
+              {myContacts.map((contact, index) => (
+                <ContactListItem
+                  key={contact.id}
+                  id={contact.contactUserId}
+                  name={contact.displayName || contact.contactUser.fullName}
+                  phone={contact.contactUser.phone}
+                  email={contact.contactUser.email}
+                  avatarSource={
+                    contact.contactUser.avatar
+                      ? { uri: contact.contactUser.avatar }
+                      : undefined
+                  }
+                  onPress={() => handleSelectContact(contact)}
+                  showDivider={index < myContacts.length - 1}
+                />
+              ))}
+            </View>
+          </View>
+        )}
+      </ScrollView>
 
       <PopupMenu
-        visible={selectedContact !== null}
+        visible={selection !== null}
         onClose={handleClosePreview}
       >
-        {selectedContact ? (
+        {selection ? (
           <View style={styles.preview}>
             <View style={styles.previewHeader}>
-              <Text style={styles.previewTitle}>Create Contact</Text>
+              <Text style={styles.previewTitle}>
+                {isExistingContact ? "Update Contact" : "Create Contact"}
+              </Text>
               <Pressable onPress={handleClosePreview} hitSlop={minHitSlop}>
                 <HugeiconsIcon
                   icon={Cancel01Icon}
@@ -170,10 +264,12 @@ export default function AddContactsScreen() {
                 <View style={styles.messageHeader}>
                   <View style={styles.avatarFallback}>
                     <Text style={styles.avatarInitial}>
-                      {selectedContact.name.charAt(0).toUpperCase()}
+                      {selection.fullName.charAt(0).toUpperCase()}
                     </Text>
                   </View>
-                  <Text style={styles.messageName}>{selectedContact.name}</Text>
+                  <Text style={styles.messageName}>
+                    {selection.fullName}
+                  </Text>
                 </View>
                 <View style={styles.messageBody}>
                   <Text style={styles.messageText}>
@@ -192,8 +288,8 @@ export default function AddContactsScreen() {
               />
 
               <PrimaryPressable
-                text="Add This Person"
-                onPress={handleAddPerson}
+                text={isExistingContact ? "Update This Person" : "Add This Person"}
+                onPress={handleSavePerson}
               />
             </View>
           </View>

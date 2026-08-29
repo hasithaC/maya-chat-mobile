@@ -65,20 +65,66 @@ export const palette = {
 
 // Dedicated palette for avatar-color cycling (fallback initials), kept
 // separate from `palette` since it doesn't belong to any semantic hue scale.
+// 45 neon colors spread evenly around the hue wheel (alternating lightness
+// for extra variety) so avatar-initial text stays legible on top.
 export const avatarColors = [
-  "#092328",
-  "#12544F",
-  "#2A835F",
-  "#8BBB92",
-  "#0F2854",
-  "#1C4D8D",
-  "#4988C4",
-  "#BDE8F5",
-  "#0E21A0",
-  "#4D2FB2",
-  "#B153D7",
-  "#F375C2",
+  "#EF0606",
+  "#D12005",
+  "#EF4406",
+  "#D15705",
+  "#EF8206",
+  "#D18D05",
+  "#EFC006",
+  "#D1C305",
+  "#DFEF06",
+  "#A8D105",
+  "#A1EF06",
+  "#72D105",
+  "#63EF06",
+  "#3CD105",
+  "#25EF06",
+  "#05D105",
+  "#06EF25",
+  "#05D13C",
+  "#06EF63",
+  "#05D172",
+  "#06EFA1",
+  "#05D1A8",
+  "#06EFDF",
+  "#05C3D1",
+  "#06C0EF",
+  "#058DD1",
+  "#0682EF",
+  "#0557D1",
+  "#0644EF",
+  "#0520D1",
+  "#0606EF",
+  "#2005D1",
+  "#4406EF",
+  "#5705D1",
+  "#8206EF",
+  "#8D05D1",
+  "#C006EF",
+  "#C305D1",
+  "#EF06DF",
+  "#D105A8",
+  "#EF06A1",
+  "#D10572",
+  "#EF0663",
+  "#D1053C",
+  "#EF0625",
 ] as const;
+
+// Deterministically picks an avatar color for a given identity. Prefer a
+// stable id (user id, conversation id) over a display name/title so the
+// color doesn't shift if that name changes later.
+export function getAvatarColor(seed: string): string {
+  const sum = Array.from(seed).reduce(
+    (total, char) => total + char.charCodeAt(0),
+    0,
+  );
+  return avatarColors[sum % avatarColors.length];
+}
 
 export function withAlpha(hex: string, opacity: number): string {
   const normalized = hex.replace("#", "");

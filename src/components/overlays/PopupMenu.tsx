@@ -1,9 +1,10 @@
 import type { PropsWithChildren } from "react";
+import { useEffect } from "react";
 import { Platform } from "react-native";
 import type { StyleProp, ViewStyle } from "react-native";
 import {
+  BackHandler,
   KeyboardAvoidingView,
-  Modal,
   Pressable,
   StyleSheet,
   View,
@@ -21,28 +22,45 @@ interface PopupMenuProps extends PropsWithChildren {
   style?: StyleProp<ViewStyle>;
 }
 
+// Deliberately NOT using React Native's <Modal> here — on Android it opens
+// a separate native window that conflicts with react-native-screens'
+// Fragment-based screen management (used by expo-router), which is a
+// documented cause of app freezes. This is just an in-app overlay, so a
+// plain absolutely-positioned View avoids that conflict entirely.
 export function PopupMenu({ visible, onClose, style, children }: PopupMenuProps) {
+  useEffect(() => {
+    if (!visible || Platform.OS !== "android") return;
+
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        onClose();
+        return true;
+      },
+    );
+
+    return () => subscription.remove();
+  }, [visible, onClose]);
+
+  if (!visible) {
+    return null;
+  }
+
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
+    <KeyboardAvoidingView
+      style={styles.overlay}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <KeyboardAvoidingView
-        style={styles.overlay}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <Pressable style={styles.backdrop} onPress={onClose} />
-        <View style={[styles.menu, style]}>{children}</View>
-      </KeyboardAvoidingView>
-    </Modal>
+      <Pressable style={styles.backdrop} onPress={onClose} />
+      <View style={[styles.menu, style]}>{children}</View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   overlay: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1000,
     alignItems: "center",
     justifyContent: "center",
     padding: spacing["2xl"],
