@@ -155,12 +155,24 @@ export const onReadReceipt = (cb: (data: any) => void) => {
 
 /* ---------------- TYPING ---------------- */
 
-// Emits 'typing' to notify the conversation that this user is currently typing.
-export const sendTyping = (conversationId: string) => {
-  socket?.emit('typing', {conversationId});
+export interface UserTypingPayload {
+  userId: string;
+  conversationId?: string;
+  isTyping: boolean;
+}
+
+// Emits 'typing' to notify the conversation that this user started/stopped typing.
+export const sendTyping = (conversationId: string, isTyping: boolean) => {
+  socket?.emit('typing', {conversationId, isTyping});
 };
 
-// Listens for 'user_typing', fired when another user in the conversation is typing.
-export const onUserTyping = (cb: (data: any) => void) => {
+// Listens for 'user_typing', fired when another user in the conversation
+// starts or stops typing.
+export const onUserTyping = (cb: (data: UserTypingPayload) => void) => {
   socket?.on('user_typing', cb);
+};
+
+// Removes a previously registered 'user_typing' listener.
+export const offUserTyping = (cb: (data: UserTypingPayload) => void) => {
+  socket?.off('user_typing', cb);
 };

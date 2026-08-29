@@ -4,7 +4,7 @@ import mayaAvatar from "@/assets/images/avatars/maya-avatar.png";
 import emptyThreadImage from "@/assets/images/states/empty-conversation-thread.png";
 import { router, useLocalSearchParams } from "expo-router";
 import type { ReactNode } from "react";
-import { Fragment, useCallback, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ImageSourcePropType, ListRenderItemInfo } from "react-native";
 import {
   Animated,
@@ -51,6 +51,13 @@ import type {
   ConversationMessage,
 } from "../../../src/domain/conversations/types/conversations.types";
 import { getConversationDisplay } from "../../../src/domain/conversations/utils/conversation-display";
+import {
+  joinConversation,
+  leaveConversation,
+  offUserTyping,
+  onUserTyping,
+  sendTyping,
+} from "../../../src/core/socket/chat-socket";
 import { usePresenceStore } from "../../../src/core/socket/presence.store";
 import { useFadeTransition } from "../../../src/hooks/useFadeTransition";
 import { formatDateLabel, formatTime } from "../../../src/utils/date";
@@ -203,6 +210,9 @@ export default function ConversationScreen() {
     paddingBottom: Math.max(insets.bottom, spacing.lg),
   };
   const [draft, setDraft] = useState("");
+  const [typingUserId, setTypingUserId] = useState<string | null>(null);
+  const isTypingRef = useRef(false);
+  const stopTypingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const currentUserId = useAuthStore((state) => state.user?.id);
   const onlineUserIds = usePresenceStore((state) => state.onlineUserIds);
@@ -217,6 +227,71 @@ export default function ConversationScreen() {
     isLoading: isPending,
     loadingDuration: 250,
   });
+
+  useEffect(() => {
+    if (!id) return;
+    joinConversation(id);
+    return () => {
+      leaveConversation(id);
+    };
+  }, [id]);
+
+  useEffect(() => {
+    setTypingUserId(null);
+
+    const handleUserTyping = (data: {
+      userId: string;
+      conversationId?: string;
+      isTyping: boolean;
+    }) => {
+      if (data.userId === currentUserId) return;
+      if (data.conversationId && data.conversationId !== id) return;
+
+      setTypingUserId(data.isTyping ? data.userId : null);
+    };
+
+    onUserTyping(handleUserTyping);
+    return () => offUserTyping(handleUserTyping);
+  }, [id, currentUserId]);
+
+  useEffect(() => {
+    return () => {
+      if (stopTypingTimeoutRef.current) {
+        clearTimeout(stopTypingTimeoutRef.current);
+      }
+      if (isTypingRef.current && id) {
+        sendTyping(id, false);
+      }
+    };
+  }, [id]);
+
+  const handleDraftChange = (text: string) => {
+    setDraft(text);
+    if (!id) return;
+
+    if (stopTypingTimeoutRef.current) {
+      clearTimeout(stopTypingTimeoutRef.current);
+      stopTypingTimeoutRef.current = null;
+    }
+
+    if (text.length === 0) {
+      if (isTypingRef.current) {
+        isTypingRef.current = false;
+        sendTyping(id, false);
+      }
+      return;
+    }
+
+    if (!isTypingRef.current) {
+      isTypingRef.current = true;
+      sendTyping(id, true);
+    }
+
+    stopTypingTimeoutRef.current = setTimeout(() => {
+      isTypingRef.current = false;
+      sendTyping(id, false);
+    }, 2000);
+  };
 
   const header = conversation
     ? getConversationDisplay(conversation, currentUserId)
@@ -289,12 +364,14 @@ export default function ConversationScreen() {
             avatarSource={header.avatarSource}
             title={header.title}
             status={
-              conversation?.isGroup
-                ? "Group"
-                : header.otherParticipantId &&
-                    onlineUserIds.has(header.otherParticipantId)
-                  ? "Online"
-                  : "Offline"
+              typingUserId
+                ? `${participantsById.get(typingUserId)?.name ?? "Someone"} is typing…`
+                : conversation?.isGroup
+                  ? "Group"
+                  : header.otherParticipantId &&
+                      onlineUserIds.has(header.otherParticipantId)
+                    ? "Online"
+                    : "Offline"
             }
             loading={isConversationPending}
             trailing={
@@ -354,7 +431,7 @@ export default function ConversationScreen() {
         </View>
 
         <View style={{...inputBarInsetStyle, paddingHorizontal: spacing.lg,}}>
-          <MessageInputBar value={draft} onChangeText={setDraft} />
+          <MessageInputBar value={draft} onChangeText={handleDraftChange} />
         </View>
       </KeyboardAvoidingView>
     </View>
