@@ -20,16 +20,18 @@ import {
 } from "../../../src/constants/tokens";
 import { ROUTES } from "../../../src/constants/routes";
 import { useAuthStore } from "../../../src/domain/auth/store/auth.store";
+import { useTalkToMaya } from "../../../src/hooks/useTalkToMaya";
 
 export default function ProfileScreen() {
   const logout = useAuthStore((s) => s.logout);
   const insets = useSafeAreaInsets();
   const containerInsetStyle = { paddingTop: Math.max(insets.top, spacing.lg) };
+  const handleTalkToMaya = useTalkToMaya();
 
   return (
     <View style={[styles.container, containerInsetStyle]}>
       <View style={styles.content}>
-        <TabHeader title="Profile & More" />
+        <TabHeader title="Profile & More" onCtaPress={handleTalkToMaya} />
         <PrimarySearchInput
           placeholder="Search for profile, settings and more"
           onSearch={() => {}}

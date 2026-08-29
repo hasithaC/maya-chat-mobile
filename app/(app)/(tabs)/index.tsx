@@ -28,15 +28,17 @@ import {
   manrope,
   spacing,
 } from "../../../src/constants/tokens";
+import { useTalkToMaya } from "../../../src/hooks/useTalkToMaya";
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const containerInsetStyle = { paddingTop: Math.max(insets.top, spacing.lg) };
+  const handleTalkToMaya = useTalkToMaya();
 
   return (
     <View style={[styles.container, containerInsetStyle]}>
       <View style={styles.content}>
-        <TabHeader title="Home" />
+        <TabHeader title="Home" onCtaPress={handleTalkToMaya} />
         <PrimarySearchInput
           placeholder="Search for anything..."
           onSearch={() => {}}
