@@ -1,7 +1,6 @@
 import { UserIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
-import { useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { Image, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   BackHeader,
@@ -14,16 +13,17 @@ import {
   iconSize,
   spacing,
 } from "../../src/constants/tokens";
+import { useAuthStore } from "../../src/domain/auth/store/auth.store";
 
 export default function MyProfileScreen() {
-  const [name, setName] = useState("Robert Williams");
-  const [phone, setPhone] = useState("+94 75 123 4567");
-  const [department, setDepartment] = useState("Information Technology");
+  const user = useAuthStore((state) => state.user);
   const insets = useSafeAreaInsets();
   const containerInsetStyle = {
     paddingTop: Math.max(insets.top, spacing.lg),
     paddingBottom: Math.max(insets.bottom, spacing.lg),
   };
+
+  const email = typeof user?.email === "string" ? user.email : "";
 
   return (
     <View style={[styles.container, containerInsetStyle]}>
@@ -31,11 +31,15 @@ export default function MyProfileScreen() {
 
       <View style={styles.avatarRow}>
         <View style={styles.avatar}>
-          <HugeiconsIcon
-            icon={UserIcon}
-            size={iconSize["5xl"]}
-            color={colors.textSecondary}
-          />
+          {typeof user?.avatar === "string" ? (
+            <Image source={{ uri: user.avatar }} style={styles.avatarImage} />
+          ) : (
+            <HugeiconsIcon
+              icon={UserIcon}
+              size={iconSize["5xl"]}
+              color={colors.textSecondary}
+            />
+          )}
         </View>
       </View>
 
@@ -47,26 +51,24 @@ export default function MyProfileScreen() {
         <View style={styles.fields}>
           <PrimaryTextInput
             leftIcon="person-outline"
-            value={name}
-            onChangeText={setName}
+            value={user?.fullName ?? ""}
             editable={false}
           />
           <PrimaryTextInput
             leftIcon="call-outline"
-            value={phone}
-            onChangeText={setPhone}
+            value={user?.phone ?? ""}
             editable={false}
           />
           <PrimaryTextInput
             leftIcon="mail-outline"
-            value="robertwilliams88@gmail.com"
-            onChangeText={() => {}}
+            value={email}
+            placeholder="Not set"
             disabled
           />
           <PrimaryTextInput
             leftIcon="briefcase-outline"
-            value={department}
-            onChangeText={setDepartment}
+            value=""
+            placeholder="Not set"
             editable={false}
           />
         </View>
@@ -106,6 +108,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
+  },
+  avatarImage: {
+    width: "100%",
+    height: "100%",
   },
   fields: {
     gap: spacing.lg,
