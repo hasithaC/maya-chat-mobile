@@ -1,3 +1,4 @@
+import 'react-native-get-random-values';
 import {
   Geist_400Regular,
   Geist_500Medium,
@@ -22,6 +23,7 @@ import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {authEvents} from '../src/core/auth/auth-events';
 import {tokenManager} from '../src/core/auth/token-manager';
 import {queryClient} from '../src/core/query/query-client';
+import {useChatSocketConnection} from '../src/core/socket/useChatSocketConnection';
 import {authApi} from '../src/domain/auth/api/auth.api';
 import {useAuthStore} from '../src/domain/auth/store/auth.store';
 
@@ -32,6 +34,11 @@ function ForceLogoutBridge() {
 
   useEffect(() => authEvents.on('forceLogout', () => logout()), [logout]);
 
+  return null;
+}
+
+function ChatSocketBridge() {
+  useChatSocketConnection();
   return null;
 }
 
@@ -86,6 +93,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <ForceLogoutBridge />
+        <ChatSocketBridge />
         <Stack screenOptions={{headerShown: false}} />
         <StatusBar style="auto" />
       </QueryClientProvider>
