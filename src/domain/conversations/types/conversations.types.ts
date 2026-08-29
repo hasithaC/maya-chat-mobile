@@ -51,6 +51,7 @@ export interface Conversation {
   participantCount: number;
   archivedAt: any;
   participants: Participant[];
+  unreadCount?: number;
 }
 
 export interface ConversationMessage {

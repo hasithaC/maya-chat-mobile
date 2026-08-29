@@ -19,4 +19,5 @@ export const useConversationMessages = (conversationId: string) =>
     queryKey: ['conversations', conversationId, 'messages'],
     queryFn: () => conversationsApi.getMessages(conversationId),
     enabled: Boolean(conversationId),
+    refetchOnMount: 'always',
   });

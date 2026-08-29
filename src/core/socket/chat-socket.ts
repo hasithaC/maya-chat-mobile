@@ -1,8 +1,11 @@
 import {io, type Socket} from 'socket.io-client';
+import type {ConversationMessage} from '../../domain/conversations/types/conversations.types';
 import {CHAT_SOCKET_URL} from './config';
 import {usePresenceStore} from './presence.store';
 
 let socket: Socket | null = null;
+let onlineUsersPollTimer: ReturnType<typeof setInterval> | null = null;
+const ONLINE_USERS_POLL_INTERVAL_MS = 20000;
 
 /* ---------------- CONNECT ---------------- */
 
@@ -18,6 +21,12 @@ export const initChatSocket = (jwt: string) => {
   socket.on('connect', () => {
     if (__DEV__) console.log('[SOCKET CONNECTED]', socket?.id);
     requestOnlineUsers();
+
+    // The server only appears to push 'online_users' in response to our own
+    // request, not proactively when someone else's status changes, so poll
+    // periodically to keep presence from going stale mid-session.
+    if (onlineUsersPollTimer) clearInterval(onlineUsersPollTimer);
+    onlineUsersPollTimer = setInterval(requestOnlineUsers, ONLINE_USERS_POLL_INTERVAL_MS);
   });
 
   socket.on('connected', data => {
@@ -48,6 +57,10 @@ export const initChatSocket = (jwt: string) => {
 };
 
 export const disconnectChatSocket = () => {
+  if (onlineUsersPollTimer) {
+    clearInterval(onlineUsersPollTimer);
+    onlineUsersPollTimer = null;
+  }
   if (!socket) return;
   if (__DEV__) console.log('[SOCKET DISCONNECTING]', socket.id);
   socket.disconnect();
@@ -101,11 +114,26 @@ export const onUserLeftConversation = (cb: (data: any) => void) => {
 
 /* ---------------- MESSAGES ---------------- */
 
+export interface MessageAckPayload {
+  tempId: string;
+  messageId?: number;
+  status?: string;
+  [key: string]: unknown;
+}
+
+export interface MessageErrorPayload {
+  tempId?: string;
+  message?: string;
+  [key: string]: unknown;
+}
+
 // Emits 'send_message' with the message data plus a client-side timestamp.
 export const sendMessage = (data: {
   conversationId: string;
   content: string;
   tempId?: string;
+  type?: string;
+  attachments?: unknown[];
 }) => {
   socket?.emit('send_message', {
     ...data,
@@ -114,43 +142,108 @@ export const sendMessage = (data: {
 };
 
 // Listens for 'receive_message', fired when a new message arrives for this client.
-export const onReceiveMessage = (cb: (msg: any) => void) => {
+export const onReceiveMessage = (cb: (msg: ConversationMessage) => void) => {
   socket?.on('receive_message', cb);
 };
 
+export const offReceiveMessage = (cb: (msg: ConversationMessage) => void) => {
+  socket?.off('receive_message', cb);
+};
+
 // Listens for 'message_ack', the server's acknowledgement that a sent message was received.
-export const onMessageAck = (cb: (ack: any) => void) => {
+export const onMessageAck = (cb: (ack: MessageAckPayload) => void) => {
   socket?.on('message_ack', cb);
 };
 
+export const offMessageAck = (cb: (ack: MessageAckPayload) => void) => {
+  socket?.off('message_ack', cb);
+};
+
 // Listens for 'message_error', fired when sending a message fails server-side.
-export const onMessageError = (cb: (err: any) => void) => {
+export const onMessageError = (cb: (err: MessageErrorPayload) => void) => {
   socket?.on('message_error', cb);
+};
+
+export const offMessageError = (cb: (err: MessageErrorPayload) => void) => {
+  socket?.off('message_error', cb);
 };
 
 /* ---------------- READ / STATUS ---------------- */
 
+export interface MessageStatusUpdatePayload {
+  messageId: number;
+  status: string;
+  conversationId?: string;
+  [key: string]: unknown;
+}
+
+export interface MessageReadReceiptPayload {
+  messageId: number;
+  readerId?: string;
+  readAt?: string;
+  conversationId?: string;
+  [key: string]: unknown;
+}
+
 // Emits 'message_status' to update a message's delivery/read status.
 export const updateMessageStatus = (data: {
-  messageId: string;
+  messageId: number;
   status: 'delivered' | 'read';
 }) => {
   socket?.emit('message_status', data);
 };
 
 // Emits 'message_read' to mark a specific message as read.
-export const markMessageRead = (messageId: string) => {
+export const markMessageRead = (messageId: number) => {
   socket?.emit('message_read', {messageId});
 };
 
 // Listens for 'message_status_update', fired when a message's status changes.
-export const onMessageStatusUpdate = (cb: (data: any) => void) => {
+export const onMessageStatusUpdate = (
+  cb: (data: MessageStatusUpdatePayload) => void,
+) => {
   socket?.on('message_status_update', cb);
 };
 
+export const offMessageStatusUpdate = (
+  cb: (data: MessageStatusUpdatePayload) => void,
+) => {
+  socket?.off('message_status_update', cb);
+};
+
 // Listens for 'message_read_receipt', fired when another user reads a message.
-export const onReadReceipt = (cb: (data: any) => void) => {
+export const onReadReceipt = (cb: (data: MessageReadReceiptPayload) => void) => {
   socket?.on('message_read_receipt', cb);
+};
+
+export const offReadReceipt = (cb: (data: MessageReadReceiptPayload) => void) => {
+  socket?.off('message_read_receipt', cb);
+};
+
+/* ---------------- CONVERSATION LIST ---------------- */
+
+export interface ConversationUpdatedPayload {
+  conversationId: string;
+  lastMessageAt: string;
+  lastMessagePreview: string;
+  senderId: string;
+  senderName: string;
+  unreadCount: number;
+  timestamp: string;
+}
+
+// Listens for 'conversation:updated', fired when a conversation's latest
+// message or unread count changes (e.g. after sending/receiving a message).
+export const onConversationUpdated = (
+  cb: (data: ConversationUpdatedPayload) => void,
+) => {
+  socket?.on('conversation:updated', cb);
+};
+
+export const offConversationUpdated = (
+  cb: (data: ConversationUpdatedPayload) => void,
+) => {
+  socket?.off('conversation:updated', cb);
 };
 
 /* ---------------- TYPING ---------------- */

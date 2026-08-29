@@ -2,6 +2,7 @@ import { MoreVerticalIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import mayaAvatar from "@/assets/images/avatars/maya-avatar.png";
 import emptyThreadImage from "@/assets/images/states/empty-conversation-thread.png";
+import { useQueryClient } from "@tanstack/react-query";
 import { router, useLocalSearchParams } from "expo-router";
 import type { ReactNode } from "react";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -29,6 +30,7 @@ import {
   MessageInputBar,
   PrimaryPressable,
   VoiceNotePlayer,
+  type MessageReadStatus,
 } from "../../../src/components";
 import {
   colors,
@@ -54,9 +56,27 @@ import { getConversationDisplay } from "../../../src/domain/conversations/utils/
 import {
   joinConversation,
   leaveConversation,
+  markMessageRead,
+  offMessageAck,
+  offMessageError,
+  offMessageStatusUpdate,
+  offReadReceipt,
+  offReceiveMessage,
   offUserTyping,
+  onMessageAck,
+  onMessageError,
+  onMessageStatusUpdate,
+  onReadReceipt,
+  onReceiveMessage,
   onUserTyping,
+  requestOnlineUsers,
+  sendMessage,
   sendTyping,
+  updateMessageStatus,
+  type MessageAckPayload,
+  type MessageErrorPayload,
+  type MessageReadReceiptPayload,
+  type MessageStatusUpdatePayload,
 } from "../../../src/core/socket/chat-socket";
 import { usePresenceStore } from "../../../src/core/socket/presence.store";
 import { useFadeTransition } from "../../../src/hooks/useFadeTransition";
@@ -171,12 +191,27 @@ function ActionCard({ action }: { action: Action }) {
   return <MessageCard>{children}</MessageCard>;
 }
 
+function getReadStatus(
+  message: ConversationMessage,
+  pendingStatus?: "sending" | "failed",
+): MessageReadStatus | undefined {
+  if (pendingStatus === "sending") return "sending";
+  if (pendingStatus === "failed") return undefined;
+  if (message.readAt) return "read";
+  if (message.status?.toUpperCase() === "DELIVERED") return "delivered";
+  return "sent";
+}
+
 function MessageWithActions({
   message,
   variant,
+  pendingStatus,
+  onRetry,
 }: {
   message: ConversationMessage;
   variant: "incoming" | "outgoing";
+  pendingStatus?: "sending" | "failed";
+  onRetry?: () => void;
 }) {
   const images = (message.attachments ?? [])
     .filter(isImageAttachment)
@@ -186,13 +221,25 @@ function MessageWithActions({
 
   return (
     <Fragment>
-      <MessageBubble
-        variant={variant}
-        text={message.content}
-        time={formatTime(message.createdAt)}
-        images={images.length > 0 ? images : undefined}
-        voiceUrl={voiceAttachment?.url}
-      />
+      <View style={pendingStatus === "sending" ? styles.sendingBubble : undefined}>
+        <MessageBubble
+          variant={variant}
+          text={message.content}
+          time={formatTime(message.createdAt)}
+          images={images.length > 0 ? images : undefined}
+          voiceUrl={voiceAttachment?.url}
+          readStatus={
+            variant === "outgoing"
+              ? getReadStatus(message, pendingStatus)
+              : undefined
+          }
+        />
+      </View>
+      {pendingStatus === "failed" ? (
+        <Pressable onPress={onRetry} style={styles.retryRow}>
+          <Text style={styles.retryText}>Failed to send · Tap to retry</Text>
+        </Pressable>
+      ) : null}
       {actions.map((action) => (
         <ActionCard key={action.id} action={action} />
       ))}
@@ -211,11 +258,18 @@ export default function ConversationScreen() {
   };
   const [draft, setDraft] = useState("");
   const [typingUserId, setTypingUserId] = useState<string | null>(null);
+  const [pendingStatusById, setPendingStatusById] = useState<
+    Map<number, "sending" | "failed">
+  >(new Map());
   const isTypingRef = useRef(false);
   const stopTypingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingTempIdRef = useRef<Map<string, number>>(new Map());
+  const markedReadIdsRef = useRef<Set<number>>(new Set());
+  const listRef = useRef<FlatList<Segment>>(null);
 
   const currentUserId = useAuthStore((state) => state.user?.id);
   const onlineUserIds = usePresenceStore((state) => state.onlineUserIds);
+  const queryClient = useQueryClient();
   const { data: conversation, isPending: isConversationPending } = useConversation(id);
   const {
     data: messages,
@@ -231,10 +285,188 @@ export default function ConversationScreen() {
   useEffect(() => {
     if (!id) return;
     joinConversation(id);
+    requestOnlineUsers();
     return () => {
       leaveConversation(id);
     };
   }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    const messagesQueryKey = ["conversations", id, "messages"];
+
+    const handleAck = (ack: MessageAckPayload) => {
+      const knownId = pendingTempIdRef.current.get(ack.tempId);
+      if (knownId == null) return;
+
+      const resolvedId = ack.messageId ?? knownId;
+      const status =
+        typeof ack.status === "string" ? ack.status : undefined;
+
+      queryClient.setQueryData<ConversationMessage[]>(messagesQueryKey, (old) =>
+        (old ?? []).map((message) =>
+          message.id === knownId || message.id === resolvedId
+            ? {
+                ...message,
+                id: resolvedId,
+                status: status ?? message.status,
+                readAt:
+                  status?.toUpperCase() === "READ"
+                    ? new Date().toISOString()
+                    : message.readAt,
+              }
+            : message,
+        ),
+      );
+
+      // The server appears to re-emit 'message_ack' for the same tempId as
+      // the message moves through SENT/DELIVERED/READ, so keep the mapping
+      // pointed at the real id instead of deleting it after the first ack.
+      pendingTempIdRef.current.set(ack.tempId, resolvedId);
+
+      setPendingStatusById((prev) => {
+        const next = new Map(prev);
+        next.delete(knownId);
+        next.delete(resolvedId);
+        return next;
+      });
+    };
+
+    const handleError = (err: MessageErrorPayload) => {
+      const optimisticId = err.tempId
+        ? pendingTempIdRef.current.get(err.tempId)
+        : undefined;
+      if (optimisticId == null) return;
+      setPendingStatusById((prev) => new Map(prev).set(optimisticId, "failed"));
+    };
+
+    const handleReceive = (message: ConversationMessage) => {
+      if (String(message.conversationId) !== id) return;
+      // Our own sent messages are reconciled via message_ack instead, so we
+      // don't end up with both an optimistic bubble and a duplicate real one.
+      if (message.senderId === currentUserId) return;
+
+      queryClient.setQueryData<ConversationMessage[]>(messagesQueryKey, (old) => {
+        const existing = old ?? [];
+        if (existing.some((m) => m.id === message.id)) return existing;
+        return [...existing, message];
+      });
+
+      // The conversation is open on screen, so the message is delivered and
+      // read as soon as it arrives.
+      updateMessageStatus({ messageId: message.id, status: "delivered" });
+      markMessageRead(message.id);
+      markedReadIdsRef.current.add(message.id);
+    };
+
+    const handleStatusUpdate = (data: MessageStatusUpdatePayload) => {
+      queryClient.setQueryData<ConversationMessage[]>(messagesQueryKey, (old) =>
+        (old ?? []).map((message) =>
+          message.id === data.messageId
+            ? { ...message, status: data.status }
+            : message,
+        ),
+      );
+    };
+
+    const handleReadReceipt = (data: MessageReadReceiptPayload) => {
+      queryClient.setQueryData<ConversationMessage[]>(messagesQueryKey, (old) =>
+        (old ?? []).map((message) =>
+          message.id === data.messageId
+            ? { ...message, status: "READ", readAt: data.readAt ?? new Date().toISOString() }
+            : message,
+        ),
+      );
+    };
+
+    onMessageAck(handleAck);
+    onMessageError(handleError);
+    onReceiveMessage(handleReceive);
+    onMessageStatusUpdate(handleStatusUpdate);
+    onReadReceipt(handleReadReceipt);
+
+    return () => {
+      offMessageAck(handleAck);
+      offMessageError(handleError);
+      offReceiveMessage(handleReceive);
+      offMessageStatusUpdate(handleStatusUpdate);
+      offReadReceipt(handleReadReceipt);
+    };
+  }, [id, currentUserId, queryClient]);
+
+  useEffect(() => {
+    if (isPending) return;
+    const timeout = setTimeout(() => {
+      listRef.current?.scrollToEnd({ animated: false });
+    }, 0);
+    return () => clearTimeout(timeout);
+  }, [isPending, id]);
+
+  useEffect(() => {
+    if (!messages || messages.length === 0) return;
+
+    messages.forEach((message) => {
+      if (message.senderId === currentUserId) return;
+      if (message.readAt) return;
+      if (markedReadIdsRef.current.has(message.id)) return;
+
+      markedReadIdsRef.current.add(message.id);
+      markMessageRead(message.id);
+    });
+  }, [messages, currentUserId]);
+
+  const handleSend = useCallback(() => {
+    const content = draft.trim();
+    if (!content || !id) return;
+
+    const tempId = `temp-${Date.now()}`;
+    const optimisticId = -Date.now();
+    const optimisticMessage: ConversationMessage = {
+      id: optimisticId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      deletedAt: null,
+      conversationId: Number(id),
+      senderId: currentUserId ?? "",
+      type: "TEXT",
+      status: "SENDING",
+      content,
+      attachments: [],
+      metadata: undefined,
+      isEdited: false,
+      editedAt: null,
+      isPinned: false,
+      pinnedAt: null,
+      deliveredAt: null,
+      readAt: null,
+    };
+
+    pendingTempIdRef.current.set(tempId, optimisticId);
+    queryClient.setQueryData<ConversationMessage[]>(
+      ["conversations", id, "messages"],
+      (old) => [...(old ?? []), optimisticMessage],
+    );
+    setPendingStatusById((prev) => new Map(prev).set(optimisticId, "sending"));
+    setDraft("");
+    sendMessage({ conversationId: id, content, tempId, type: "TEXT" });
+    requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
+  }, [draft, id, currentUserId, queryClient]);
+
+  const handleRetry = useCallback(
+    (message: ConversationMessage) => {
+      if (!id) return;
+      const tempId = `temp-${Date.now()}`;
+      pendingTempIdRef.current.set(tempId, message.id);
+      setPendingStatusById((prev) => new Map(prev).set(message.id, "sending"));
+      sendMessage({
+        conversationId: id,
+        content: message.content,
+        tempId,
+        type: message.type,
+      });
+    },
+    [id],
+  );
 
   useEffect(() => {
     setTypingUserId(null);
@@ -321,7 +553,6 @@ export default function ConversationScreen() {
     () => buildSegments(messages ?? [], currentUserId),
     [messages, currentUserId],
   );
-  const listRef = useRef<FlatList<Segment>>(null);
 
   const renderSegment = useCallback(
     ({ item: segment }: ListRenderItemInfo<Segment>) => {
@@ -330,7 +561,14 @@ export default function ConversationScreen() {
       }
 
       if (segment.kind === "outgoing") {
-        return <MessageWithActions message={segment.message} variant="outgoing" />;
+        return (
+          <MessageWithActions
+            message={segment.message}
+            variant="outgoing"
+            pendingStatus={pendingStatusById.get(segment.message.id)}
+            onRetry={() => handleRetry(segment.message)}
+          />
+        );
       }
 
       const sender = participantsById.get(segment.senderId);
@@ -350,7 +588,7 @@ export default function ConversationScreen() {
         </MessageGroup>
       );
     },
-    [participantsById],
+    [participantsById, pendingStatusById, handleRetry],
   );
 
   return (
@@ -431,7 +669,11 @@ export default function ConversationScreen() {
         </View>
 
         <View style={{...inputBarInsetStyle, paddingHorizontal: spacing.lg,}}>
-          <MessageInputBar value={draft} onChangeText={handleDraftChange} />
+          <MessageInputBar
+            value={draft}
+            onChangeText={handleDraftChange}
+            onSend={handleSend}
+          />
         </View>
       </KeyboardAvoidingView>
     </View>
@@ -456,6 +698,7 @@ const styles = StyleSheet.create({
   },
   absoluteFill: {
     ...StyleSheet.absoluteFillObject,
+    justifyContent: "flex-end",
   },
   scroll: {
     flex: 1,
@@ -474,5 +717,17 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     lineHeight: lineHeight.sm,
     color: colors.textPrimary,
+  },
+  sendingBubble: {
+    opacity: 0.6,
+  },
+  retryRow: {
+    alignSelf: "flex-end",
+  },
+  retryText: {
+    fontFamily: geist.regular,
+    fontSize: fontSize.xs,
+    lineHeight: lineHeight.xs,
+    color: colors.error,
   },
 });

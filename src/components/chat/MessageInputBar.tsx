@@ -1,4 +1,4 @@
-import { Camera01Icon, Mic01Icon } from "@hugeicons/core-free-icons";
+import { Camera01Icon, Mic01Icon, Sent02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { Pressable, StyleSheet, TextInput, View } from "react-native";
 import {
@@ -16,6 +16,7 @@ import {
 interface MessageInputBarProps {
   value: string;
   onChangeText: (text: string) => void;
+  onSend?: () => void;
   onCameraPress?: () => void;
   onMicPress?: () => void;
   placeholder?: string;
@@ -24,10 +25,13 @@ interface MessageInputBarProps {
 export function MessageInputBar({
   value,
   onChangeText,
+  onSend,
   onCameraPress,
   onMicPress,
   placeholder = "Type something...",
 }: MessageInputBarProps) {
+  const hasDraft = value.trim().length > 0;
+
   return (
     <View style={styles.container}>
       <TextInput
@@ -36,6 +40,8 @@ export function MessageInputBar({
         placeholder={placeholder}
         placeholderTextColor={colors.textSecondary}
         style={styles.input}
+        onSubmitEditing={hasDraft ? onSend : undefined}
+        returnKeyType={hasDraft ? "send" : "default"}
       />
 
       <Pressable style={styles.iconButton} onPress={onCameraPress}>
@@ -45,13 +51,23 @@ export function MessageInputBar({
           color={colors.textPrimary}
         />
       </Pressable>
-      <Pressable style={styles.iconButton} onPress={onMicPress}>
-        <HugeiconsIcon
-          icon={Mic01Icon}
-          size={iconSize.sm}
-          color={colors.textPrimary}
-        />
-      </Pressable>
+      {hasDraft ? (
+        <Pressable style={styles.sendButton} onPress={onSend}>
+          <HugeiconsIcon
+            icon={Sent02Icon}
+            size={iconSize.sm}
+            color={colors.textInverse}
+          />
+        </Pressable>
+      ) : (
+        <Pressable style={styles.iconButton} onPress={onMicPress}>
+          <HugeiconsIcon
+            icon={Mic01Icon}
+            size={iconSize.sm}
+            color={colors.textPrimary}
+          />
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -81,6 +97,14 @@ const styles = StyleSheet.create({
     height: controlHeight.xs,
     borderRadius: controlHeight.xs / 2,
     backgroundColor: colors.backgroundSecondary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sendButton: {
+    width: controlHeight.xs,
+    height: controlHeight.xs,
+    borderRadius: controlHeight.xs / 2,
+    backgroundColor: colors.buttonPrimary,
     alignItems: "center",
     justifyContent: "center",
   },

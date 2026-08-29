@@ -1,7 +1,7 @@
 import { BubbleChatIcon, UserGroupIcon } from "@hugeicons/core-free-icons";
 import emptyConversationImage from "@/assets/images/states/empty-conversation.png";
 import { router } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Animated,
   Pressable,
@@ -38,6 +38,7 @@ import {
   spacing,
 } from "../../../src/constants/tokens";
 import { ROUTES } from "../../../src/constants/routes";
+import { requestOnlineUsers } from "../../../src/core/socket/chat-socket";
 import { usePresenceStore } from "../../../src/core/socket/presence.store";
 import { useAuthStore } from "../../../src/domain/auth/store/auth.store";
 import { useConversations } from "../../../src/domain/conversations/hooks/conversations.hooks";
@@ -86,6 +87,10 @@ export default function ChatsScreen() {
     isLoading: isPending,
     loadingDuration: 250,
   });
+
+  useEffect(() => {
+    requestOnlineUsers();
+  }, []);
 
   const displayConversations = useMemo(
     () =>
@@ -216,6 +221,7 @@ export default function ChatsScreen() {
                           ? conversation.lastMessagePreview
                           : "No messages yet"
                       }
+                      unreadCount={conversation.unreadCount ?? 0}
                       showDivider={index < filteredConversations.length - 1}
                       onPress={() =>
                         router.push(ROUTES.conversation(String(conversation.id)))

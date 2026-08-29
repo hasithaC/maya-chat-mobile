@@ -1,3 +1,5 @@
+import { CheckCheckIcon, CheckIcon, Clock01Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react-native";
 import type { ReactNode } from "react";
 import type { StyleProp, TextStyle } from "react-native";
 import { StyleSheet, Text, View } from "react-native";
@@ -7,6 +9,7 @@ import {
   colors,
   fontSize,
   geist,
+  iconSize,
   lineHeight,
   manrope,
   shadows,
@@ -15,12 +18,37 @@ import {
 import { MessageImageGrid } from "./MessageImageGrid";
 import { VoiceNotePlayer } from "./VoiceNotePlayer";
 
+export type MessageReadStatus = "sending" | "sent" | "delivered" | "read";
+
 interface MessageBubbleProps {
   variant: "incoming" | "outgoing" | "outgoing-plain";
   text: string;
   time?: string;
   images?: string[];
   voiceUrl?: string;
+  readStatus?: MessageReadStatus;
+}
+
+function ReadStatusIcon({ status }: { status: MessageReadStatus }) {
+  if (status === "sending") {
+    return (
+      <HugeiconsIcon icon={Clock01Icon} size={iconSize.sm} color={colors.textSecondary} />
+    );
+  }
+
+  if (status === "read") {
+    return (
+      <HugeiconsIcon icon={CheckCheckIcon} size={iconSize.sm} color={colors.buttonPrimary} />
+    );
+  }
+
+  if (status === "delivered") {
+    return (
+      <HugeiconsIcon icon={CheckCheckIcon} size={iconSize.sm} color={colors.textSecondary} />
+    );
+  }
+
+  return <HugeiconsIcon icon={CheckIcon} size={iconSize.sm} color={colors.textSecondary} />;
 }
 
 const MENTION_PATTERN = /@\w+(?:\s\w+)?/g;
@@ -61,6 +89,7 @@ export function MessageBubble({
   time,
   images,
   voiceUrl,
+  readStatus,
 }: MessageBubbleProps) {
   return (
     <View
@@ -74,7 +103,12 @@ export function MessageBubble({
       {voiceUrl ? <VoiceNotePlayer audioUrl={voiceUrl} /> : null}
       {images && images.length > 0 ? <MessageImageGrid images={images} /> : null}
       {text.trim().length > 0 ? renderTextWithMentions(text, styles.text) : null}
-      {time ? <Text style={styles.time}>{time}</Text> : null}
+      {time ? (
+        <View style={styles.footer}>
+          <Text style={styles.time}>{time}</Text>
+          {readStatus ? <ReadStatusIcon status={readStatus} /> : null}
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -110,8 +144,13 @@ const styles = StyleSheet.create({
   mention: {
     fontFamily: manrope.bold,
   },
-  time: {
+  footer: {
     alignSelf: "flex-end",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  time: {
     fontFamily: geist.regular,
     fontSize: fontSize.xs,
     lineHeight: lineHeight.xs,
