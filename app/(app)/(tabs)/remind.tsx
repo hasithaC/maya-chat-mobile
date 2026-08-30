@@ -8,11 +8,13 @@ import {
 import type { IconSvgElement } from "@hugeicons/react-native";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
+  CalendarDatePicker,
   FilterChip,
   MayaMessageCard,
+  PopupMenu,
   PrimarySearchInput,
   ReminderEventBar,
   ReminderListItem,
@@ -64,6 +66,31 @@ function generateTimeSlots(): string[] {
     const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
     return `${String(hour12).padStart(2, "0")}:${String(minute).padStart(2, "0")}${period}`;
   });
+}
+
+const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTH_LABELS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+// Built manually (not toLocaleDateString) so the format stays consistent
+// across locales/platforms, e.g. "Sat, 29 Nov 2025".
+function formatReminderDate(date: Date): string {
+  const weekday = WEEKDAY_LABELS[date.getDay()];
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = MONTH_LABELS[date.getMonth()];
+  return `${weekday}, ${day} ${month} ${date.getFullYear()}`;
 }
 
 const TIME_SLOTS = generateTimeSlots();
@@ -160,6 +187,8 @@ export default function RemindScreen() {
   const containerInsetStyle = { paddingTop: Math.max(insets.top, spacing.lg) };
   const handleTalkToMaya = useTalkToMaya();
   const [view, setView] = useState<ReminderView>("list");
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   return (
     <View style={[styles.container, containerInsetStyle]}>
@@ -180,19 +209,24 @@ export default function RemindScreen() {
 
         <View style={styles.summaryRow}>
           <View style={styles.summaryLeft}>
-            <Text style={styles.summaryTitle}>Open for Today</Text>
+            <Text style={styles.summaryTitle}>Open Reminders</Text>
             <View style={styles.countBadge}>
               <Text style={styles.countText}>{REMINDERS.length}</Text>
             </View>
           </View>
-          <View style={styles.dateRow}>
-            <Text style={styles.dateText}>Sat, 29 Nov 2025</Text>
+          <Pressable
+            style={styles.dateRow}
+            onPress={() => setShowDatePicker(true)}
+          >
+            <Text style={styles.dateText}>
+              {formatReminderDate(selectedDate)}
+            </Text>
             <HugeiconsIcon
               icon={ArrowDown01Icon}
               size={iconSize.md}
               color={colors.textSecondary}
             />
-          </View>
+          </Pressable>
         </View>
 
         <View style={styles.filters}>
@@ -232,6 +266,19 @@ export default function RemindScreen() {
           <CalendarTimeline reminders={REMINDERS} />
         )}
       </ScrollView>
+
+      <PopupMenu
+        visible={showDatePicker}
+        onClose={() => setShowDatePicker(false)}
+      >
+        <View style={styles.datePicker}>
+          <CalendarDatePicker
+            value={selectedDate}
+            onChange={setSelectedDate}
+            onDone={() => setShowDatePicker(false)}
+          />
+        </View>
+      </PopupMenu>
     </View>
   );
 }
@@ -242,6 +289,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+    gap: spacing.xs,
     paddingHorizontal: spacing.lg,
     backgroundColor: colors.backgroundPrimary,
   },
@@ -293,6 +341,10 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     lineHeight: lineHeight.xs,
     color: colors.textPrimary,
+  },
+  datePicker: {
+    alignItems: "center",
+    padding: spacing.lg,
   },
   filters: {
     flexDirection: "row",
