@@ -1,18 +1,11 @@
 import {useQuery} from '@tanstack/react-query';
 import * as Calendar from 'expo-calendar';
 import {classifyCalendarSource} from '../utils/classify-calendar-source';
+import {endOfDay, startOfDay} from '../utils/date-range';
 import type {
   DeviceCalendarEvent,
   DeviceCalendarEventsResult,
 } from '../types/device-calendar.types';
-
-function startOfDay(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
-}
-
-function endOfDay(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
-}
 
 async function fetchDeviceCalendarEvents(date: Date): Promise<DeviceCalendarEventsResult> {
   const permission = await Calendar.requestCalendarPermissionsAsync();

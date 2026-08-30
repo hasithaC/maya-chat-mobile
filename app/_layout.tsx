@@ -20,6 +20,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import {StatusBar} from 'expo-status-bar';
 import {useEffect, useState} from 'react';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
+import {ToastHost} from '../src/components/overlays/Toast';
 import {authEvents} from '../src/core/auth/auth-events';
 import {tokenManager} from '../src/core/auth/token-manager';
 import {queryClient} from '../src/core/query/query-client';
@@ -133,6 +134,7 @@ export default function RootLayout() {
         <ForceLogoutBridge />
         <ChatSocketBridge />
         <Stack screenOptions={{headerShown: false}} />
+        <ToastHost />
         <StatusBar style="auto" />
       </QueryClientProvider>
     </SafeAreaProvider>

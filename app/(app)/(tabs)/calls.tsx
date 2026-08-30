@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import type { ImageSourcePropType } from "react-native";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
@@ -5,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   type CallDirection,
   CallListItem,
+  CallListShimmer,
   ContactListItem,
   FilterChip,
   PrimarySearchInput,
@@ -29,6 +31,7 @@ interface CallLogItem {
   title: string;
   direction: CallDirection;
   time: string;
+  avatarUrl?: string;
   avatarSource?: ImageSourcePropType;
 }
 
@@ -115,6 +118,10 @@ function mapCallHistoryToItem(
 ): CallLogItem {
   const isCaller = call.callerId === currentUserId;
   const otherPartyAvatar = isCaller ? call.calleeAvatar : call.callerAvatar;
+  const avatarUrl =
+    typeof otherPartyAvatar === "string" && otherPartyAvatar
+      ? otherPartyAvatar
+      : undefined;
 
   return {
     id: String(call.id),
@@ -122,10 +129,8 @@ function mapCallHistoryToItem(
     title: isCaller ? call.calleeName : call.callerName,
     direction: getCallDirection(call, currentUserId),
     time: formatCallTime(call.startedAt),
-    avatarSource:
-      typeof otherPartyAvatar === "string" && otherPartyAvatar
-        ? { uri: otherPartyAvatar }
-        : undefined,
+    avatarUrl,
+    avatarSource: avatarUrl ? { uri: avatarUrl } : undefined,
   };
 }
 
@@ -150,7 +155,7 @@ export default function CallsScreen() {
   const { data: contactsData } = useContacts();
   const contacts = contactsData?.contacts ?? [];
   const currentUserId = useAuthStore((state) => state.user?.id);
-  const { data: callHistory } = useCallHistory();
+  const { data: callHistory, isLoading: isCallHistoryLoading } = useCallHistory();
 
   const calls = useMemo(
     () =>
@@ -213,18 +218,34 @@ export default function CallsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {filteredCalls.map((call, index) => (
-          <CallListItem
-            key={call.id}
-            id={call.otherUserId}
-            title={call.title}
-            direction={call.direction}
-            time={call.time}
-            avatarSource={call.avatarSource}
-            showDivider={index < filteredCalls.length - 1}
-            onViewSummary={() => {}}
-          />
-        ))}
+        {isCallHistoryLoading ? (
+          <CallListShimmer />
+        ) : (
+          filteredCalls.map((call, index) => (
+            <CallListItem
+              key={call.id}
+              id={call.otherUserId}
+              title={call.title}
+              direction={call.direction}
+              time={call.time}
+              avatarSource={call.avatarSource}
+              showDivider={index < filteredCalls.length - 1}
+              onViewSummary={() =>
+                router.push({
+                  pathname: "/(app)/call-summary/[id]",
+                  params: {
+                    id: call.id,
+                    title: call.title,
+                    time: call.time,
+                    direction: call.direction,
+                    otherUserId: call.otherUserId,
+                    ...(call.avatarUrl ? { avatarUrl: call.avatarUrl } : {}),
+                  },
+                })
+              }
+            />
+          ))
+        )}
 
         {filteredContacts.length > 0 ? (
           <View style={styles.section}>

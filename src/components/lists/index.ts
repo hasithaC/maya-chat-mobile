@@ -1,4 +1,5 @@
 export * from './CallListItem';
+export * from './CallListShimmer';
 export * from './ChatsShimmer';
 export * from './ContactListItem';
 export * from './ContactListShimmer';

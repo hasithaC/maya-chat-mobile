@@ -32,8 +32,6 @@ export const LEGACY_ENDPOINTS = {
     REJECT: (callId: string) => `/api/v1/voice/calls/${callId}/reject`,
     END: (callId: string) => `/api/v1/voice/calls/${callId}/end`,
     UPDATE_SID: (callId: string) => `/api/v1/voice/calls/${callId}/twilio-sid`,
-    SUMMARY: (callId: string) =>
-      `${MAYA_API_BASE_URL}/api/chat/call-summary/${callId}`,
   },
   MAYA: {
     START: `${MAYA_API_BASE_URL}/api/onboarding/start`,
