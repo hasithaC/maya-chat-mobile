@@ -8,5 +8,12 @@ export default function AppLayout() {
     return <Redirect href="/(auth)/sign-in" />;
   }
 
-  return <Stack screenOptions={{headerShown: false}} />;
+  return (
+    <Stack screenOptions={{headerShown: false}}>
+      <Stack.Screen
+        name="conversation/attachment-preview"
+        options={{presentation: 'fullScreenModal'}}
+      />
+    </Stack>
+  );
 }

@@ -28,15 +28,17 @@ import {
   manrope,
   spacing,
 } from "../../../src/constants/tokens";
+import { useTalkToMaya } from "../../../src/hooks/useTalkToMaya";
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const containerInsetStyle = { paddingTop: Math.max(insets.top, spacing.lg) };
+  const handleTalkToMaya = useTalkToMaya();
 
   return (
     <View style={[styles.container, containerInsetStyle]}>
       <View style={styles.content}>
-        <TabHeader title="Home" />
+        <TabHeader title="Home" onCtaPress={handleTalkToMaya} />
         <PrimarySearchInput
           placeholder="Search for anything..."
           onSearch={() => {}}
@@ -139,7 +141,11 @@ export default function HomeScreen() {
           title="Upcoming Events"
           count={2}
           footer={
-            <PrimaryPressable size="sm" text="Go to Reminders" onPress={() => {}} />
+            <PrimaryPressable
+              size="sm"
+              text="Go to Reminders"
+              onPress={() => {}}
+            />
           }
         >
           <EventListItem
@@ -165,10 +171,11 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   content: {
-      gap: spacing.lg,
+    gap: spacing.lg,
   },
   container: {
     flex: 1,
+    gap: spacing.xs,
     paddingHorizontal: spacing.lg,
     backgroundColor: colors.backgroundPrimary,
   },

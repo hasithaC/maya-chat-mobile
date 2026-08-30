@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { ImageSourcePropType } from "react-native";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import mayaAvatar from "@/assets/images/avatars/maya-avatar.png";
@@ -18,6 +19,7 @@ interface TabHeaderProps {
   ctaEmoji?: string;
   avatarSource?: ImageSourcePropType;
   onCtaPress?: () => void;
+  trailing?: ReactNode;
 }
 
 export function TabHeader({
@@ -26,15 +28,19 @@ export function TabHeader({
   ctaEmoji = "👋",
   avatarSource = mayaAvatar,
   onCtaPress,
+  trailing,
 }: TabHeaderProps) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{title}</Text>
-      <Pressable style={styles.cta} onPress={onCtaPress}>
-        <Text style={styles.emoji}>{ctaEmoji}</Text>
-        <Text style={styles.ctaLabel}>{ctaLabel}</Text>
-        <Image source={avatarSource} style={styles.avatar} />
-      </Pressable>
+      <View style={styles.actions}>
+        <Pressable style={styles.cta} onPress={onCtaPress}>
+          <Text style={styles.emoji}>{ctaEmoji}</Text>
+          <Text style={styles.ctaLabel}>{ctaLabel}</Text>
+          <Image source={avatarSource} style={styles.avatar} />
+        </Pressable>
+        {trailing}
+      </View>
     </View>
   );
 }
@@ -50,6 +56,11 @@ const styles = StyleSheet.create({
     fontSize: fontSize["2xl"],
     lineHeight: lineHeight["2xl"],
     color: colors.textPrimary,
+  },
+  actions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
   },
   cta: {
     flexDirection: "row",

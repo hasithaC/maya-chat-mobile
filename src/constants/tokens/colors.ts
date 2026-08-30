@@ -63,6 +63,69 @@ export const palette = {
   },
 } as const;
 
+// Dedicated palette for avatar-color cycling (fallback initials), kept
+// separate from `palette` since it doesn't belong to any semantic hue scale.
+// 45 neon colors spread evenly around the hue wheel (alternating lightness
+// for extra variety) so avatar-initial text stays legible on top.
+export const avatarColors = [
+  "#EF0606",
+  "#D12005",
+  "#EF4406",
+  "#D15705",
+  "#EF8206",
+  "#D18D05",
+  "#EFC006",
+  "#D1C305",
+  "#DFEF06",
+  "#A8D105",
+  "#A1EF06",
+  "#72D105",
+  "#63EF06",
+  "#3CD105",
+  "#25EF06",
+  "#05D105",
+  "#06EF25",
+  "#05D13C",
+  "#06EF63",
+  "#05D172",
+  "#06EFA1",
+  "#05D1A8",
+  "#06EFDF",
+  "#05C3D1",
+  "#06C0EF",
+  "#058DD1",
+  "#0682EF",
+  "#0557D1",
+  "#0644EF",
+  "#0520D1",
+  "#0606EF",
+  "#2005D1",
+  "#4406EF",
+  "#5705D1",
+  "#8206EF",
+  "#8D05D1",
+  "#C006EF",
+  "#C305D1",
+  "#EF06DF",
+  "#D105A8",
+  "#EF06A1",
+  "#D10572",
+  "#EF0663",
+  "#D1053C",
+  "#EF0625",
+] as const;
+
+// Deterministically picks an avatar color for a given identity. Prefer a
+// stable id (user id, conversation id) over a display name/title so the
+// color doesn't shift if that name changes later.
+export function getAvatarColor(seed: string): string {
+  const sum = Array.from(seed).reduce(
+    (total, char) => total + char.charCodeAt(0),
+    0,
+  );
+  return avatarColors[sum % avatarColors.length];
+}
+
 export function withAlpha(hex: string, opacity: number): string {
   const normalized = hex.replace("#", "");
   const alpha = Math.round(Math.min(Math.max(opacity, 0), 1) * 255)
@@ -74,15 +137,22 @@ export function withAlpha(hex: string, opacity: number): string {
 
 export const colors = {
   backgroundPrimary: palette.surface.white, //verified
-  backgroundSecondary: palette.surface[200], //verified
-  backgroundAccent: palette.green[100],
+  backgroundSecondary: palette.surface[300], //verified
+  backgroundSecondaryStrong: palette.border[400],
+  backgroundTertiary: palette.surface[200],
+  backgroundAccent: palette.green[200],
+  backgroundAccentStrong: palette.green[400],
+  backgroundInverse: palette.surface.black,
+  backgroundInverseSecondary: withAlpha(palette.surface.white, 0.2),
+  scrim: withAlpha(palette.surface.black, 0.4),
 
   textPrimary: palette.ink[900], //verified
   textSecondary: palette.ink[500], //verified
   textInverse: palette.surface.white,
+  textInverseSecondary: withAlpha(palette.surface.white, 0.6),
   textLink: palette.green[900],
   textAccent: palette.green[600],
-
+ 
   border: palette.border[300], //verified
   borderStrong: palette.border[700],
   borderAccent: palette.green[600], //verified

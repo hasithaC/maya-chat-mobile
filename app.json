@@ -14,13 +14,19 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.hasithac.mayachatmobile"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ],
+      "package": "com.hasithac.mayachatmobile"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -29,7 +35,15 @@
       "expo-asset",
       "expo-secure-store",
       "expo-font",
-      "expo-router"
+      "expo-router",
+      "expo-audio",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to send images in chat.",
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to take photos for chat."
+        }
+      ]
     ]
   }
 }
