@@ -15,6 +15,7 @@ export const geist = {
 } as const;
 
 export const fontSize = {
+  '2xs': 10,
   xs: 12,
   sm: 14,
   base: 16,
@@ -26,6 +27,7 @@ export const fontSize = {
 } as const;
 
 export const lineHeight = {
+  '2xs': 14,
   xs: 16,
   sm: 20,
   base: 24,
