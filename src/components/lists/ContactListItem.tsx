@@ -1,4 +1,5 @@
 import { BubbleChatAddIcon } from "@hugeicons/core-free-icons";
+import type { IconSvgElement } from "@hugeicons/react-native";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import { useEffect, useRef, useState } from "react";
 import type { ImageSourcePropType } from "react-native";
@@ -39,6 +40,67 @@ interface ContactListItemProps {
   onStartChat?: () => void | Promise<void>;
 }
 
+function PulsingActionButton({
+  icon,
+  onPress,
+}: {
+  icon: IconSvgElement;
+  onPress: () => void | Promise<void>;
+}) {
+  const [pending, setPending] = useState(false);
+  const scale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (!pending) {
+      scale.setValue(1);
+      return;
+    }
+
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(scale, {
+          toValue: 1.15,
+          duration: 450,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(scale, {
+          toValue: 1,
+          duration: 450,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+
+    return () => loop.stop();
+  }, [pending, scale]);
+
+  const handlePress = async () => {
+    if (pending) return;
+    setPending(true);
+    try {
+      await onPress();
+    } finally {
+      setPending(false);
+    }
+  };
+
+  return (
+    <Pressable
+      style={styles.actionButton}
+      onPress={handlePress}
+      disabled={pending}
+      hitSlop={minHitSlop}
+    >
+      <Animated.View style={{ transform: [{ scale }] }}>
+        <HugeiconsIcon icon={icon} size={iconSize.sm} color={colors.textInverse} />
+      </Animated.View>
+    </Pressable>
+  );
+}
+
 function HighlightedName({ name, query }: { name: string; query?: string }) {
   const index = query ? name.toLowerCase().indexOf(query.toLowerCase()) : -1;
 
@@ -76,49 +138,6 @@ export function ContactListItem({
 }: ContactListItemProps) {
   const avatarColor = getAvatarColor(id != null ? String(id) : name);
   const subtitle = phone || email || "";
-  const [pending, setPending] = useState(false);
-  const scale = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    if (!pending) {
-      scale.setValue(1);
-      return;
-    }
-
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(scale, {
-          toValue: 1.15,
-          duration: 450,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(scale, {
-          toValue: 1,
-          duration: 450,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ]),
-    );
-    loop.start();
-
-    return () => loop.stop();
-  }, [pending, scale]);
-
-  const handleStartChat = async () => {
-    if (pending || !onStartChat) return;
-    setPending(true);
-    try {
-      await onStartChat();
-    } finally {
-      setPending(false);
-    }
-  };
-
-  const scaleStyle = {
-    transform: [{ scale }],
-  };
 
   return (
     <Pressable
@@ -140,20 +159,7 @@ export function ContactListItem({
       </View>
 
       {onStartChat ? (
-        <Pressable
-          style={styles.startChatButton}
-          onPress={handleStartChat}
-          disabled={pending}
-          hitSlop={minHitSlop}
-        >
-          <Animated.View style={scaleStyle}>
-            <HugeiconsIcon
-              icon={BubbleChatAddIcon}
-              size={iconSize.sm}
-              color={colors.textInverse}
-            />
-          </Animated.View>
-        </Pressable>
+        <PulsingActionButton icon={BubbleChatAddIcon} onPress={onStartChat} />
       ) : null}
     </Pressable>
   );
@@ -208,7 +214,7 @@ const styles = StyleSheet.create({
     lineHeight: lineHeight.xs,
     color: colors.textSecondary,
   },
-  startChatButton: {
+  actionButton: {
     width: controlHeight.xs,
     height: controlHeight.xs,
     borderRadius: controlHeight.xs / 2,
