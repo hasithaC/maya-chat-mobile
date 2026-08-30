@@ -43,6 +43,12 @@
           "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to send images in chat.",
           "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera to take photos for chat."
         }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Allow $(PRODUCT_NAME) to access your calendars to show your events in Reminders."
+        }
       ]
     ]
   }

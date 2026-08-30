@@ -5,7 +5,7 @@
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
-    "ios": "expo run:ios",
+    "ios": "expo run:ios --device 00008130-0002181E2E42001C",
     "web": "expo start --web"
   },
   "dependencies": {
@@ -19,6 +19,7 @@
     "expo": "~52.0.49",
     "expo-asset": "~11.0.5",
     "expo-audio": "~0.3.5",
+    "expo-calendar": "~14.0.6",
     "expo-constants": "~17.0.8",
     "expo-file-system": "~18.0.12",
     "expo-font": "~13.0.4",

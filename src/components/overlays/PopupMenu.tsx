@@ -9,12 +9,7 @@ import {
   StyleSheet,
   View,
 } from "react-native";
-import {
-  borderRadius,
-  colors,
-  shadows,
-  spacing,
-} from "../../constants/tokens";
+import { borderRadius, colors, shadows, spacing } from "../../constants/tokens";
 
 interface PopupMenuProps extends PropsWithChildren {
   visible: boolean;
@@ -27,7 +22,12 @@ interface PopupMenuProps extends PropsWithChildren {
 // Fragment-based screen management (used by expo-router), which is a
 // documented cause of app freezes. This is just an in-app overlay, so a
 // plain absolutely-positioned View avoids that conflict entirely.
-export function PopupMenu({ visible, onClose, style, children }: PopupMenuProps) {
+export function PopupMenu({
+  visible,
+  onClose,
+  style,
+  children,
+}: PopupMenuProps) {
   useEffect(() => {
     if (!visible || Platform.OS !== "android") return;
 

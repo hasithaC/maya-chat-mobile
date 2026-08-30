@@ -38,23 +38,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     height: controlHeight.xs,
     borderRadius: controlHeight.xs / 2,
+    alignItems: "center",
     justifyContent: "center",
-    borderWidth: borderWidth.hairline,
-    borderColor: colors.border,
     backgroundColor: colors.backgroundSecondary,
   },
   chipSelected: {
+    borderWidth: borderWidth.thin,
     borderColor: colors.borderAccent,
     backgroundColor: colors.backgroundAccent,
   },
   label: {
-    fontFamily: manrope.medium,
+    fontFamily: manrope.semiBold,
     fontSize: fontSize.xs,
     lineHeight: lineHeight.xs,
     color: colors.textSecondary,
   },
   labelSelected: {
-    fontFamily: manrope.semiBold,
     color: colors.textPrimary,
   },
 });
