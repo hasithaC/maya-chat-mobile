@@ -16,6 +16,8 @@ import {
   spacing,
   withAlpha,
 } from "../../constants/tokens";
+import type { CalendarSourceKind } from "../../domain/device-calendar/types/device-calendar.types";
+import { CalendarSourceBadge } from "./CalendarSourceBadge";
 
 interface ReminderListItemProps {
   icon: IconSvgElement;
@@ -26,6 +28,7 @@ interface ReminderListItemProps {
   date: string;
   assignedByAssistant?: boolean;
   completed?: boolean;
+  sourceKind?: CalendarSourceKind;
 }
 
 export function ReminderListItem({
@@ -37,12 +40,18 @@ export function ReminderListItem({
   date,
   assignedByAssistant = false,
   completed = false,
+  sourceKind,
 }: ReminderListItemProps) {
   return (
     <View style={[styles.container, completed && styles.completedContainer]}>
       <View style={styles.row}>
         <View style={styles.iconBadge}>
           <HugeiconsIcon icon={icon} size={iconSize.md} color={iconColor} />
+          {sourceKind ? (
+            <View style={styles.sourceBadge}>
+              <CalendarSourceBadge sourceKind={sourceKind} />
+            </View>
+          ) : null}
         </View>
         <View style={styles.textContainer}>
           <Text style={styles.subtitle} numberOfLines={1}>
@@ -87,12 +96,18 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   iconBadge: {
+    position: "relative",
     width: avatarSize.sm,
     height: avatarSize.sm,
     borderRadius: avatarSize.sm / 2,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.backgroundPrimary,
+  },
+  sourceBadge: {
+    position: "absolute",
+    right: -spacing.xs,
+    bottom: -spacing.xs,
   },
   textContainer: {
     flex: 1,

@@ -14,12 +14,15 @@ import {
   spacing,
   withAlpha,
 } from "../../constants/tokens";
+import type { CalendarSourceKind } from "../../domain/device-calendar/types/device-calendar.types";
+import { CalendarSourceBadge } from "./CalendarSourceBadge";
 
 interface ReminderEventBarProps {
   icon: IconSvgElement;
   title: string;
   subtitle: string;
   color: string;
+  sourceKind?: CalendarSourceKind;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -28,6 +31,7 @@ export function ReminderEventBar({
   title,
   subtitle,
   color,
+  sourceKind,
   style,
 }: ReminderEventBarProps) {
   return (
@@ -36,6 +40,11 @@ export function ReminderEventBar({
     >
       <View style={[styles.iconBadge, { backgroundColor: colors.backgroundPrimary }]}>
         <HugeiconsIcon icon={icon} size={iconSize.sm} color={color} />
+        {sourceKind ? (
+          <View style={styles.sourceBadge}>
+            <CalendarSourceBadge sourceKind={sourceKind} size={14} />
+          </View>
+        ) : null}
       </View>
       <View style={styles.textContainer}>
         <Text style={[styles.title, { color }]} numberOfLines={1}>
@@ -62,11 +71,17 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   iconBadge: {
+    position: "relative",
     width: avatarSize.xs,
     height: avatarSize.xs,
     borderRadius: avatarSize.xs / 2,
     alignItems: "center",
     justifyContent: "center",
+  },
+  sourceBadge: {
+    position: "absolute",
+    right: -spacing.xs / 2,
+    bottom: -spacing.xs / 2,
   },
   textContainer: {
     flex: 1,

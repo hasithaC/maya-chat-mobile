@@ -182,7 +182,6 @@ export function CalendarDatePicker({
           <PrimaryPressable
             text="Reset to Today"
             appearance="outline"
-            size="sm"
             onPress={() => {
               onChange(new Date());
               onDone?.();
@@ -192,7 +191,6 @@ export function CalendarDatePicker({
         <View style={styles.actionButton}>
           <PrimaryPressable
             text="Set Date"
-            size="sm"
             onPress={() => onDone?.()}
           />
         </View>
@@ -246,7 +244,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   weekdayLabel: {
-    flex: 1,
+    width: `${100 / CELL_COUNT_PER_ROW}%`,
     textAlign: "center",
     fontFamily: geist.regular,
     fontSize: fontSize.xs,
@@ -256,19 +254,17 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    alignItems: "center",
-    justifyContent: "center",
   },
   cell: {
-    width: `${80 / CELL_COUNT_PER_ROW}%`,
+    width: `${100 / CELL_COUNT_PER_ROW}%`,
     aspectRatio: 1,
     alignItems: "center",
     justifyContent: "center",
   },
   dayCircle: {
-    width: controlHeight.xs,
-    height: controlHeight.xs,
-    borderRadius: controlHeight.xs / 2,
+    width: "82%",
+    height: "82%",
+    borderRadius: borderRadius.full,
     alignItems: "center",
     justifyContent: "center",
   },
