@@ -58,7 +58,7 @@ export function SignUpScreen() {
         });
       } else {
         router.push({
-          pathname: "/(auth)/otp",
+          pathname: "/(auth)/sign-in-otp",
           params: { identifier: value, identifierType: "mobile" },
         });
       }
