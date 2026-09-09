@@ -14,6 +14,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   borderRadius,
+  borderWidth,
   colors,
   fontSize,
   iconSize,
@@ -150,7 +151,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     backgroundColor: colors.backgroundSecondary,
-    ...shadows.sm,
+    borderWidth: borderWidth.hairline,
+    borderColor: colors.border,
   },
   tab: {
     flex: 1,
@@ -175,6 +177,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderRadius: borderRadius.full,
     backgroundColor: colors.backgroundSecondary,
-    ...shadows.sm,
+    borderWidth: borderWidth.hairline,
+    borderColor: colors.border,
   },
 });
