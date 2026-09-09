@@ -106,7 +106,7 @@ export function SignInScreen() {
       }
 
       router.push({
-        pathname: "/(auth)/otp",
+        pathname: "/(auth)/sign-in-otp",
         params: { identifier: value, identifierType: channel },
       });
     } catch (err) {

@@ -1,5 +1,6 @@
 export * from './AvatarStack';
 export * from './CalendarSourceBadge';
+export * from './CallSummaryShimmer';
 export * from './EventListItem';
 export * from './MailThreadListItem';
 export * from './MayaBriefingCard';
