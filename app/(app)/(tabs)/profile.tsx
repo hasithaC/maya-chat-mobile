@@ -30,6 +30,7 @@ interface SettingsItem {
   icon?: IconSvgElement;
   iconColor?: string;
   disabled?: boolean;
+  onPress?: () => void;
 }
 
 interface SettingsSection {
@@ -37,39 +38,42 @@ interface SettingsSection {
   items: SettingsItem[];
 }
 
-const SECTIONS: SettingsSection[] = [
-  {
-    label: "Connectors",
-    items: [
-      { label: "WhatsApp", icon: WhatsappIcon, iconColor: palette.green[600] },
-    ],
-  },
-  {
-    label: "Account Settings",
-    items: [
-      { label: "Manage Email Address" },
-      { label: "Change Phone Number", disabled: true },
-      { label: "Two-factor Authentication", disabled: true },
-      { label: "Delete My Account" },
-    ],
-  },
-  {
-    label: "Privacy",
-    items: [
-      { label: "Last Seen & Online" },
-      { label: "Blocked Users" },
-      { label: "Chat Backup" },
-    ],
-  },
-  {
-    label: "Other",
-    items: [
-      { label: "Maya (Personal Assistant)" },
-      { label: "System Notifications" },
-      { label: "Device Access Permissions" },
-    ],
-  },
-];
+function getSections(logout: () => void): SettingsSection[] {
+  return [
+    {
+      label: "Connectors",
+      items: [
+        { label: "WhatsApp", icon: WhatsappIcon, iconColor: palette.green[600] },
+      ],
+    },
+    {
+      label: "Account Settings",
+      items: [
+        { label: "Manage Email Address" },
+        { label: "Change Phone Number", disabled: true },
+        { label: "Two-factor Authentication", disabled: true },
+        { label: "Logout", onPress: logout },
+        { label: "Delete My Account" },
+      ],
+    },
+    {
+      label: "Privacy",
+      items: [
+        { label: "Last Seen & Online" },
+        { label: "Blocked Users" },
+        { label: "Chat Backup" },
+      ],
+    },
+    {
+      label: "Other",
+      items: [
+        { label: "Maya (Personal Assistant)" },
+        { label: "System Notifications" },
+        { label: "Device Access Permissions" },
+      ],
+    },
+  ];
+}
 
 export default function ProfileScreen() {
   const logout = useAuthStore((s) => s.logout);
@@ -82,19 +86,22 @@ export default function ProfileScreen() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const query = searchQuery.trim().toLowerCase();
+  const sections = useMemo(() => getSections(logout), [logout]);
   const filteredSections = useMemo(() => {
-    if (!query) return SECTIONS;
+    if (!query) return sections;
 
-    return SECTIONS.map((section) => {
-      if (section.label.toLowerCase().includes(query)) return section;
-      return {
-        ...section,
-        items: section.items.filter((item) =>
-          item.label.toLowerCase().includes(query),
-        ),
-      };
-    }).filter((section) => section.items.length > 0);
-  }, [query]);
+    return sections
+      .map((section) => {
+        if (section.label.toLowerCase().includes(query)) return section;
+        return {
+          ...section,
+          items: section.items.filter((item) =>
+            item.label.toLowerCase().includes(query),
+          ),
+        };
+      })
+      .filter((section) => section.items.length > 0);
+  }, [query, sections]);
 
   return (
     <View style={[styles.container, containerInsetStyle]}>
@@ -138,6 +145,7 @@ export default function ProfileScreen() {
                     iconColor={item.iconColor}
                     label={item.label}
                     disabled={item.disabled}
+                    onPress={item.onPress}
                     showDivider={index < section.items.length - 1}
                   />
                 ))}
