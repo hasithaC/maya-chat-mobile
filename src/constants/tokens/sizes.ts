@@ -25,6 +25,7 @@ export const avatarSize = {
   lg: 56,
   xl: 80,
   "2xl": 128,
+  "3xl": 160,
 } as const;
 
 export const badgeSize = {

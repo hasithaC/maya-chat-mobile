@@ -144,6 +144,7 @@ export const colors = {
   backgroundAccentStrong: palette.green[400],
   backgroundInverse: palette.surface.black,
   backgroundInverseSecondary: withAlpha(palette.surface.white, 0.2),
+  backgroundInverseSecondaryStrong: withAlpha(palette.surface.white, 0.4),
   scrim: withAlpha(palette.surface.black, 0.4),
 
   textPrimary: palette.ink[900], //verified
