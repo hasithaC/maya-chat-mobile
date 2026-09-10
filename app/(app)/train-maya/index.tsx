@@ -6,6 +6,7 @@ import { Image, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Circle, Defs, RadialGradient, Stop } from "react-native-svg";
 import { PrimaryPressable } from "../../../src/components";
+import { ROUTES } from "../../../src/constants/routes";
 import {
   avatarSize,
   borderRadius,
@@ -114,7 +115,10 @@ export default function TrainMayaScreen() {
       </View>
 
       <View style={styles.actions}>
-        <PrimaryPressable text="Let's Setup Maya" onPress={() => {}} />
+        <PrimaryPressable
+          text="Let's Setup Maya"
+          onPress={() => router.push(ROUTES.trainMayaVoicePersona)}
+        />
         <PrimaryPressable
           text="Maybe Later"
           appearance="outline"

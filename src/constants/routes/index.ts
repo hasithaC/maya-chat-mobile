@@ -5,4 +5,5 @@ export const ROUTES = {
   attachmentPreview: '/(app)/conversation/attachment-preview',
   chats: '/(app)/(tabs)/chats',
   trainMaya: '/(app)/train-maya',
+  trainMayaVoicePersona: '/(app)/train-maya/voice-persona',
 } as const;

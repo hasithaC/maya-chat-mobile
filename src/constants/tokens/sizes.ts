@@ -35,6 +35,7 @@ export const badgeSize = {
 } as const;
 
 export const controlHeight = {
+  "3xs": 20,
   "2xs": 24,
   xs: 32,
   sm: 36,
