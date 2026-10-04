@@ -63,7 +63,7 @@ export interface CallSummaryActionPayload {
   query: any;
   title: string;
   content: any;
-  audioUrl: any;
+  audioUrl?: any;
   isVoiceNote: any;
   phoneNumber: any;
   conversationId: any;

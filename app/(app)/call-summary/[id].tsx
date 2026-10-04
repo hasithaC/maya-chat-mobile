@@ -39,6 +39,7 @@ import type {
   CallSummaryData,
   CallSummaryMessage,
 } from "../../../src/domain/calls/types/calls.types";
+import { formatEventDateTime } from "../../../src/utils/date";
 
 function ActionPillButton({
   icon,
@@ -93,7 +94,9 @@ function CallSummaryActionCard({ action }: { action: CallSummaryAction }) {
       {action.payload.date ? (
         <View style={styles.suggestionRow}>
           <View style={styles.suggestionPill}>
-            <Text style={styles.suggestionPillText}>{action.payload.date}</Text>
+            <Text style={styles.suggestionPillText}>
+              {formatEventDateTime(action.payload.date)}
+            </Text>
           </View>
         </View>
       ) : null}

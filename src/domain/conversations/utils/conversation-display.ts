@@ -14,18 +14,16 @@ export function getConversationDisplay(
   // Maps a participant's userId to their saved contact nickname.
   contactNameByUserId?: Map<string, string>,
 ): ConversationDisplay {
-  const isMaya = conversation.type === "MAYA";
-  const other = conversation.participants.find(
-    (participant) => participant.userId !== currentUserId,
-  );
-
-  if (isMaya) {
+  if (conversation.type === "MAYA") {
     return {
       title: "Maya - Personal Assistant",
       avatarSource: mayaAvatarLarge,
-      otherParticipantId: other?.userId,
     };
   }
+
+  const other = (conversation.participants ?? []).find(
+    (participant) => participant.userId !== currentUserId,
+  );
 
   if (conversation.isGroup) {
     return {

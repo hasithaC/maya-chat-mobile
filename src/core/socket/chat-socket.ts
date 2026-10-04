@@ -150,6 +150,23 @@ export const offReceiveMessage = (cb: (msg: ConversationMessage) => void) => {
   socket?.off('receive_message', cb);
 };
 
+export interface MayaResponsePayload {
+  tempId: string;
+  conversationId: string;
+  response: ConversationMessage;
+  timestamp: string;
+}
+
+// Listens for 'maya_response', fired with Maya's reply instead of
+// 'receive_message' when the conversation is the Maya assistant thread.
+export const onMayaResponse = (cb: (data: MayaResponsePayload) => void) => {
+  socket?.on('maya_response', cb);
+};
+
+export const offMayaResponse = (cb: (data: MayaResponsePayload) => void) => {
+  socket?.off('maya_response', cb);
+};
+
 // Listens for 'message_ack', the server's acknowledgement that a sent message was received.
 export const onMessageAck = (cb: (ack: MessageAckPayload) => void) => {
   socket?.on('message_ack', cb);

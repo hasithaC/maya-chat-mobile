@@ -25,6 +25,22 @@ export function formatDateLabel(iso: unknown): string {
   });
 }
 
+export function formatEventDateTime(iso: unknown): string {
+  if (typeof iso !== "string") {
+    return "";
+  }
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) {
+    return iso;
+  }
+  const datePart = date.toLocaleDateString([], {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  return `${datePart} · ${formatTime(iso)}`;
+}
+
 export function formatDuration(totalSeconds: unknown): string {
   const seconds = typeof totalSeconds === "number" && Number.isFinite(totalSeconds)
     ? Math.max(0, Math.round(totalSeconds))

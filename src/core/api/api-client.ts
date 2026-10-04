@@ -1,7 +1,7 @@
 import axios, {type AxiosError, type InternalAxiosRequestConfig} from 'axios';
 import {useAuthStore} from '../../domain/auth/store/auth.store';
 import {refreshAccessToken} from '../auth/refresh-manager';
-import {API_BASE_URL} from './config';
+import {API_BASE_URL, MAYA_API_BASE_URL} from './config';
 import {normalizeError} from './errors';
 import {unwrap} from './envelope';
 
@@ -45,7 +45,11 @@ apiClient.interceptors.response.use(
         headers: res.headers,
       });
     }
-    res.data = unwrap(res.data);
+    // The Maya host (app.aecendir.com) returns raw payloads, not the
+    // {success, data} envelope the main API uses — leave those untouched.
+    if (!res.config.url?.startsWith(MAYA_API_BASE_URL)) {
+      res.data = unwrap(res.data);
+    }
     return res;
   },
   async (error: AxiosError) => {

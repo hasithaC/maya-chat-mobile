@@ -20,6 +20,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
+  CalendarPickerSheet,
   ConversationHeader,
   ConversationShimmer,
   DateSeparator,
@@ -34,6 +35,8 @@ import {
   type MessageReadStatus,
 } from "../../../src/components";
 import {
+  borderRadius,
+  borderWidth,
   colors,
   fontSize,
   geist,
@@ -44,6 +47,7 @@ import {
 } from "../../../src/constants/tokens";
 import { ROUTES } from "../../../src/constants/routes";
 import { useAuthStore } from "../../../src/domain/auth/store/auth.store";
+import { useCallSummaryActionDispatch } from "../../../src/domain/calls/hooks/useCallSummaryActionDispatch";
 import {
   useConversation,
   useConversationMessages,
@@ -64,9 +68,11 @@ import {
   offMessageAck,
   offMessageError,
   offMessageStatusUpdate,
+  offMayaResponse,
   offReadReceipt,
   offReceiveMessage,
   offUserTyping,
+  onMayaResponse,
   onMessageAck,
   onMessageError,
   onMessageStatusUpdate,
@@ -77,6 +83,7 @@ import {
   sendMessage,
   sendTyping,
   updateMessageStatus,
+  type MayaResponsePayload,
   type MessageAckPayload,
   type MessageErrorPayload,
   type MessageReadReceiptPayload,
@@ -84,7 +91,7 @@ import {
 } from "../../../src/core/socket/chat-socket";
 import { usePresenceStore } from "../../../src/core/socket/presence.store";
 import { useFadeTransition } from "../../../src/hooks/useFadeTransition";
-import { formatDateLabel, formatTime } from "../../../src/utils/date";
+import { formatDateLabel, formatEventDateTime, formatTime } from "../../../src/utils/date";
 
 type Segment =
   | { kind: "date"; id: string; label: string }
@@ -148,13 +155,61 @@ function isVoiceAttachment(attachment: Attachment) {
   return type.includes("audio") || type.includes("voice");
 }
 
-function handleActionPress(action: Action) {
-  if (action.actionType === "CHAT" && action.payload.conversationId != null) {
-    router.push(ROUTES.conversation(String(action.payload.conversationId)));
-  }
-}
-
 function ActionCard({ action }: { action: Action }) {
+  const [dismissed, setDismissed] = useState(false);
+  const { dispatch, loading, calendarPicker } = useCallSummaryActionDispatch();
+
+  if (dismissed) return null;
+
+  if (action.actionType === "EVENT") {
+    return (
+      <Fragment>
+        <MessageCard>
+          {[
+            <Text key="title" style={styles.cardText}>
+              {action.payload.title || action.label}
+            </Text>,
+            ...(action.payload.date
+              ? [
+                  <View key="date" style={styles.suggestionRow}>
+                    <View style={styles.suggestionPill}>
+                      <Text style={styles.suggestionPillText}>
+                        {formatEventDateTime(action.payload.date)}
+                      </Text>
+                    </View>
+                  </View>,
+                ]
+              : []),
+            <View key="buttons" style={styles.suggestionActions}>
+              <View style={styles.suggestionActionButton}>
+                <PrimaryPressable
+                  size="sm"
+                  appearance="outline"
+                  text="Not Now"
+                  disabled={loading}
+                  onPress={() => setDismissed(true)}
+                />
+              </View>
+              <View style={styles.suggestionActionButton}>
+                <PrimaryPressable
+                  size="sm"
+                  text={action.label}
+                  disabled={loading}
+                  onPress={() => dispatch(action)}
+                />
+              </View>
+            </View>,
+          ]}
+        </MessageCard>
+        <CalendarPickerSheet
+          calendars={calendarPicker.calendars}
+          onSelect={calendarPicker.onSelect}
+          onCancel={calendarPicker.onCancel}
+        />
+      </Fragment>
+    );
+  }
+
   const isPrimary = action.priority === "PRIMARY";
   const children: ReactNode[] = [];
 
@@ -181,7 +236,13 @@ function ActionCard({ action }: { action: Action }) {
         key="button"
         text={action.label}
         size="sm"
-        onPress={() => handleActionPress(action)}
+        disabled={loading}
+        onPress={async () => {
+          await dispatch(action);
+          if (action.actionType === "CHAT" && action.payload.conversationId != null) {
+            router.push(ROUTES.conversation(String(action.payload.conversationId)));
+          }
+        }}
       />,
     );
   } else {
@@ -278,6 +339,7 @@ export default function ConversationScreen() {
   const onlineUserIds = usePresenceStore((state) => state.onlineUserIds);
   const queryClient = useQueryClient();
   const { data: conversation, isPending: isConversationPending } = useConversation(id);
+  const isMayaConversation = conversation?.type === "MAYA";
   const { data: contactsData } = useContacts();
   const contactNameByUserId = useMemo(
     () =>
@@ -377,6 +439,21 @@ export default function ConversationScreen() {
       markedReadIdsRef.current.add(message.id);
     };
 
+    const handleMayaResponse = (data: MayaResponsePayload) => {
+      const message = data.response;
+      if (String(data.conversationId) !== id) return;
+
+      queryClient.setQueryData<ConversationMessage[]>(messagesQueryKey, (old) => {
+        const existing = old ?? [];
+        if (existing.some((m) => m.id === message.id)) return existing;
+        return [...existing, message];
+      });
+
+      updateMessageStatus({ messageId: message.id, status: "delivered" });
+      markMessageRead(message.id);
+      markedReadIdsRef.current.add(message.id);
+    };
+
     const handleStatusUpdate = (data: MessageStatusUpdatePayload) => {
       queryClient.setQueryData<ConversationMessage[]>(messagesQueryKey, (old) =>
         (old ?? []).map((message) =>
@@ -400,6 +477,7 @@ export default function ConversationScreen() {
     onMessageAck(handleAck);
     onMessageError(handleError);
     onReceiveMessage(handleReceive);
+    onMayaResponse(handleMayaResponse);
     onMessageStatusUpdate(handleStatusUpdate);
     onReadReceipt(handleReadReceipt);
 
@@ -407,6 +485,7 @@ export default function ConversationScreen() {
       offMessageAck(handleAck);
       offMessageError(handleError);
       offReceiveMessage(handleReceive);
+      offMayaResponse(handleMayaResponse);
       offMessageStatusUpdate(handleStatusUpdate);
       offReadReceipt(handleReadReceipt);
     };
@@ -466,9 +545,14 @@ export default function ConversationScreen() {
     );
     setPendingStatusById((prev) => new Map(prev).set(optimisticId, "sending"));
     setDraft("");
-    sendMessage({ conversationId: id, content, tempId, type: "TEXT" });
+    sendMessage({
+      conversationId: id,
+      content,
+      tempId,
+      type: isMayaConversation ? "MAYA" : "TEXT",
+    });
     requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
-  }, [draft, id, currentUserId, queryClient]);
+  }, [draft, id, currentUserId, queryClient, isMayaConversation]);
 
   const sendImageAttachment = useCallback(
     async (optimisticId: number, conversationId: string) => {
@@ -519,11 +603,11 @@ export default function ConversationScreen() {
         conversationId,
         content: caption,
         tempId,
-        type: "IMAGE",
+        type: isMayaConversation ? "MAYA" : "IMAGE",
         attachments: uploadedAttachments,
       });
     },
-    [queryClient],
+    [queryClient, isMayaConversation],
   );
 
   const handleSendImages = useCallback(
@@ -632,10 +716,10 @@ export default function ConversationScreen() {
         conversationId: id,
         content: message.content,
         tempId,
-        type: message.type,
+        type: isMayaConversation ? "MAYA" : message.type,
       });
     },
-    [id, sendImageAttachment],
+    [id, sendImageAttachment, isMayaConversation],
   );
 
   useEffect(() => {
@@ -704,7 +788,7 @@ export default function ConversationScreen() {
       string,
       { name: string; avatarSource?: ImageSourcePropType }
     >();
-    conversation?.participants.forEach((participant) => {
+    conversation?.participants?.forEach((participant) => {
       const isMayaSender =
         conversation.type === "MAYA" && participant.userId !== currentUserId;
       map.set(participant.userId, {
@@ -778,8 +862,9 @@ export default function ConversationScreen() {
                 ? `${participantsById.get(typingUserId)?.name ?? "Someone"} is typing…`
                 : conversation?.isGroup
                   ? "Group"
-                  : header.otherParticipantId &&
-                      onlineUserIds.has(header.otherParticipantId)
+                  : isMayaConversation ||
+                      (header.otherParticipantId &&
+                        onlineUserIds.has(header.otherParticipantId))
                     ? "Online"
                     : "Offline"
             }
@@ -889,6 +974,32 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     lineHeight: lineHeight.sm,
     color: colors.textPrimary,
+  },
+  suggestionRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  suggestionPill: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    borderWidth: borderWidth.thin,
+    borderColor: colors.border,
+    backgroundColor: colors.backgroundSecondary,
+  },
+  suggestionPillText: {
+    fontFamily: geist.medium,
+    fontSize: fontSize.xs,
+    lineHeight: lineHeight.xs,
+    color: colors.textPrimary,
+  },
+  suggestionActions: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  suggestionActionButton: {
+    flex: 1,
   },
   sendingBubble: {
     opacity: 0.6,

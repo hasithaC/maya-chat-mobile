@@ -114,7 +114,13 @@ export function PrimaryPressable({
           end={{ x: gradientEndX, y: 0 } as unknown as { x: number; y: number }}
           style={StyleSheet.absoluteFill}
         />
-        <Text style={[styles.text, { color: textColor }]}>{text}</Text>
+        <Text
+          style={[styles.text, { color: textColor }]}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        >
+          {text}
+        </Text>
       </Pressable>
     </View>
   );

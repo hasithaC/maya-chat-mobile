@@ -50,7 +50,7 @@ export interface Conversation {
   lastMessagePreview: any;
   participantCount: number;
   archivedAt: any;
-  participants: Participant[];
+  participants?: Participant[];
   unreadCount?: number;
 }
 

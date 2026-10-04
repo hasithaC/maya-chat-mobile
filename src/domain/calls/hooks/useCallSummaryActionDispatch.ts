@@ -1,9 +1,11 @@
 import {useCallback, useRef, useState} from 'react';
 import * as Calendar from 'expo-calendar';
+import {useQueryClient} from '@tanstack/react-query';
 import {sendMessage} from '../../../core/socket/chat-socket';
 import {showToast} from '../../../core/toast/toast.store';
 import {useAuthStore} from '../../auth/store/auth.store';
 import {conversationsApi} from '../../conversations/api/conversations.api';
+import type {ConversationMessage} from '../../conversations/types/conversations.types';
 import {
   createDeviceCalendarEvent,
   getModifiableCalendars,
@@ -22,6 +24,7 @@ function getErrorMessage(error: unknown, fallback: string): string {
 // else is a no-op — new action types can be added as new branches here
 // without touching the card UI that calls dispatch().
 export function useCallSummaryActionDispatch() {
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [pickerCalendars, setPickerCalendars] = useState<Calendar.Calendar[] | null>(
     null,
@@ -61,12 +64,47 @@ export function useCallSummaryActionDispatch() {
     setLoading(true);
     try {
       const conversation = await conversationsApi.getConversation(conversationId);
+      const content =
+        typeof action.payload.content === 'string' && action.payload.content
+          ? action.payload.content
+          : action.label;
+      const targetConversationId = String(conversation.id);
+      const tempId = `temp-${Date.now()}`;
+      const currentUserId = useAuthStore.getState().user?.id ?? '';
+
+      // The target conversation may not be mounted (it isn't the one this
+      // action was surfaced in), so there's no screen-local state to add an
+      // optimistic bubble to — write straight into its query cache instead,
+      // the same cache key useConversationMessages reads from once opened.
+      const optimisticMessage: ConversationMessage = {
+        id: -Date.now(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        deletedAt: null,
+        conversationId: conversation.id,
+        senderId: currentUserId,
+        type: 'TEXT',
+        status: 'SENT',
+        content,
+        attachments: [],
+        metadata: undefined,
+        isEdited: false,
+        editedAt: null,
+        isPinned: false,
+        pinnedAt: null,
+        deliveredAt: null,
+        readAt: null,
+      };
+      queryClient.setQueryData<ConversationMessage[]>(
+        ['conversations', targetConversationId, 'messages'],
+        old => [...(old ?? []), optimisticMessage],
+      );
+
       sendMessage({
-        conversationId: String(conversation.id),
-        content:
-          typeof action.payload.content === 'string' && action.payload.content
-            ? action.payload.content
-            : action.label,
+        conversationId: targetConversationId,
+        content,
+        tempId,
+        type: 'TEXT',
       });
     } catch (error) {
       showToast(

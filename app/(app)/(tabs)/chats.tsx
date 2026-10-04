@@ -141,7 +141,7 @@ export default function ChatsScreen() {
   const conversationParticipantIds = useMemo(() => {
     const ids = new Set<string>();
     (conversations ?? []).forEach((conversation) => {
-      conversation.participants.forEach((participant) => {
+      (conversation.participants ?? []).forEach((participant) => {
         if (participant.userId !== currentUserId) {
           ids.add(participant.userId);
         }
@@ -245,36 +245,40 @@ export default function ChatsScreen() {
                   (
                     { conversation, title, avatarSource, otherParticipantId },
                     index,
-                  ) => (
-                    <Reanimated.View
-                      key={conversation.id}
-                      layout={LinearTransition}
-                      entering={FadeIn.delay(index * 40).duration(250)}
-                      exiting={FadeOut}
-                    >
-                      <ConversationListItem
-                        title={title}
-                        avatarSource={avatarSource}
-                        id={otherParticipantId ?? conversation.id}
-                        online={
-                          otherParticipantId
-                            ? onlineUserIds.has(otherParticipantId)
-                            : false
-                        }
-                        time={formatTime(conversation.lastMessageAt)}
-                        message={
-                          typeof conversation.lastMessagePreview === "string"
-                            ? conversation.lastMessagePreview
-                            : "No messages yet"
-                        }
-                        unreadCount={conversation.unreadCount ?? 0}
-                        showDivider={index < filteredConversations.length - 1}
-                        onPress={() =>
-                          router.push(ROUTES.conversation(String(conversation.id)))
-                        }
-                      />
-                    </Reanimated.View>
-                  ),
+                  ) => {
+                    const isMayaConversation = conversation.type === "MAYA";
+                    return (
+                      <Reanimated.View
+                        key={conversation.id}
+                        layout={LinearTransition}
+                        entering={FadeIn.delay(index * 40).duration(250)}
+                        exiting={FadeOut}
+                      >
+                        <ConversationListItem
+                          title={title}
+                          avatarSource={avatarSource}
+                          id={otherParticipantId ?? conversation.id}
+                          online={
+                            isMayaConversation ||
+                            (otherParticipantId
+                              ? onlineUserIds.has(otherParticipantId)
+                              : false)
+                          }
+                          time={formatTime(conversation.lastMessageAt)}
+                          message={
+                            typeof conversation.lastMessagePreview === "string"
+                              ? conversation.lastMessagePreview
+                              : "No messages yet"
+                          }
+                          unreadCount={conversation.unreadCount ?? 0}
+                          showDivider={index < filteredConversations.length - 1}
+                          onPress={() =>
+                            router.push(ROUTES.conversation(String(conversation.id)))
+                          }
+                        />
+                      </Reanimated.View>
+                    );
+                  },
                 )
               )}
 
