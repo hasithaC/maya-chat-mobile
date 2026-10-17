@@ -1,6 +1,6 @@
 // Not yet migrated into a domain/*/api file — split these into their own
 // *.api.ts (contacts, conversations, call, maya, user) as those domains are scaffolded.
-import {API_BASE_URL, MAYA_API_BASE_URL} from './config';
+import {API_BASE_URL} from './config';
 
 export const getImageUrl = (image: string): string =>
   `sample-api.example.com/v1/images/${image}`;
@@ -32,13 +32,6 @@ export const LEGACY_ENDPOINTS = {
     REJECT: (callId: string) => `/api/v1/voice/calls/${callId}/reject`,
     END: (callId: string) => `/api/v1/voice/calls/${callId}/end`,
     UPDATE_SID: (callId: string) => `/api/v1/voice/calls/${callId}/twilio-sid`,
-  },
-  MAYA: {
-    START: `${MAYA_API_BASE_URL}/api/onboarding/start`,
-    SELECT_PERSONA: `${MAYA_API_BASE_URL}/api/voice/select-persona`,
-    UPLOAD_VOICE_SAMPLE: `${MAYA_API_BASE_URL}/api/voice/upload-sample`,
-    TRAIN_VOICE_AGENT: `${MAYA_API_BASE_URL}/api/onboarding/message`,
-    TRAINING_COMPLETE: `${MAYA_API_BASE_URL}/api/onboarding/complete`,
   },
   FILE_UPLOAD: `${API_BASE_URL}/api/Storage/UploadFilev2`,
   TEMP_FILE_DOWNLOAD: `/api/v1/messages/attachments/presign-download`,

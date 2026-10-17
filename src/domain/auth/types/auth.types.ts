@@ -34,9 +34,36 @@ export interface LoginWithOTPResponse {
   user: User;
 }
 
-export interface SignUpPayload {
-  phoneNumber: string;
-  name: string;
+export interface SignUpRequest {
+  fullName: string;
+  email: string;
+  phone: string;
+  verifyToken: string;
+  avatarUrl?: string;
+  industry: string;
+}
+
+export interface SignUpResponse {
+  accessToken: string;
+  refreshToken: string;
+  accessTokenExpiresIn: string;
+  refreshTokenExpiresIn: string;
+  message: string;
+  user: User;
+}
+
+export interface PresignAvatarUploadRequest {
+  verifyToken: string;
+  fileName: string;
+  fileType: string;
+  fileSize: number;
+}
+
+export interface PresignAvatarUploadResponse {
+  uploadUrl: string;
+  s3Key: string;
+  publicUrl: string;
+  expiresIn: number;
 }
 
 export interface AuthTokens {
@@ -61,7 +88,3 @@ export interface User {
   createdAt: string;
   updatedAt: string;
 }
-
-export type AuthResponse = AuthTokens & {
-  user?: User;
-};

@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import type { PropsWithChildren, ReactNode } from "react";
-import type { StyleProp, ViewStyle } from "react-native";
+import type { DimensionValue, StyleProp, ViewStyle } from "react-native";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import {
   borderRadius,
@@ -13,7 +13,7 @@ import {
   manrope,
   spacing,
 } from "../../constants/tokens";
-import { SafeAreaContainer } from "../layout";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface BottomSheetProps extends PropsWithChildren {
   visible: boolean;
@@ -21,6 +21,10 @@ interface BottomSheetProps extends PropsWithChildren {
   title?: string;
   header?: ReactNode;
   contentStyle?: StyleProp<ViewStyle>;
+  // Fixed height for sheets whose content size varies (e.g. a filterable
+  // list) — without it, the sheet hugs its content and shrinks when there's
+  // little of it, which looks broken for a list that's meant to stay put.
+  height?: DimensionValue;
 }
 
 export function BottomSheet({
@@ -29,8 +33,12 @@ export function BottomSheet({
   title,
   header,
   contentStyle,
+  height,
   children,
 }: BottomSheetProps) {
+  const insets = useSafeAreaInsets();
+  const isFixedHeight = height !== undefined;
+
   return (
     <Modal
       visible={visible}
@@ -40,10 +48,13 @@ export function BottomSheet({
     >
       <View style={styles.overlay}>
         <Pressable style={styles.backdrop} onPress={onClose} />
-        <View style={styles.sheet}>
-          <SafeAreaContainer
-            edges={["bottom", "left", "right"]}
-            style={styles.sheetContent}
+        <View style={[styles.sheet, isFixedHeight && { height }]}>
+          <View
+            style={[
+              styles.sheetContent,
+              isFixedHeight && styles.sheetContentFill,
+              { paddingBottom: Math.max(spacing.lg, insets.bottom) },
+            ]}
           >
             <View style={styles.handle} />
 
@@ -61,8 +72,10 @@ export function BottomSheet({
                 </View>
               ))}
 
-            <View style={[styles.body, contentStyle]}>{children}</View>
-          </SafeAreaContainer>
+            <View style={[styles.body, isFixedHeight && styles.bodyFill, contentStyle]}>
+              {children}
+            </View>
+          </View>
         </View>
       </View>
     </Modal>
@@ -79,13 +92,20 @@ const styles = StyleSheet.create({
     backgroundColor: colors.overlay,
   },
   sheet: {
-    height: "80%",
+    maxHeight: "80%",
     backgroundColor: colors.backgroundPrimary,
     borderTopLeftRadius: borderRadius["2xl"],
     borderTopRightRadius: borderRadius["2xl"],
   },
   sheetContent: {
+    flexGrow: 0,
+    flexShrink: 1,
+    flexBasis: "auto",
     padding: spacing.lg,
+  },
+  sheetContentFill: {
+    flexGrow: 1,
+    flexBasis: 0,
   },
   handle: {
     alignSelf: "center",
@@ -108,7 +128,10 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   body: {
-    flex: 1,
+    flexShrink: 1,
     gap: spacing.xl,
+  },
+  bodyFill: {
+    flex: 1,
   },
 });

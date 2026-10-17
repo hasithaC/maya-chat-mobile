@@ -11,7 +11,7 @@ import {
 } from "../../constants/tokens";
 import { classifyCalendarSource } from "../../domain/device-calendar/utils/classify-calendar-source";
 import { CalendarSourceBadge } from "../cards/CalendarSourceBadge";
-import { PopupMenu } from "./PopupMenu";
+import { PopupMenu } from "../overlays/PopupMenu";
 
 interface CalendarPickerSheetProps {
   calendars: ExpoCalendar.Calendar[] | null;

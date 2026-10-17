@@ -5,7 +5,7 @@ import {useAuthStore} from '../store/auth.store';
 import type {
   LoginWithOTPRequest,
   RequestOTPRequest,
-  SignUpPayload,
+  SignUpRequest,
   VerifyOTPRequest,
 } from '../types/auth.types';
 
@@ -44,12 +44,16 @@ export const useLoginWithOtp = () => {
 export const useSignUp = () => {
   const setAuthenticated = useAuthStore(s => s.setAuthenticated);
   const setAccessToken = useAuthStore(s => s.setAccessToken);
+  const setUser = useAuthStore(s => s.setUser);
+  const setVerifyToken = useAuthStore(s => s.setVerifyToken);
 
   return useMutation({
-    mutationFn: (payload: SignUpPayload) => authApi.signUp(payload),
+    mutationFn: (payload: SignUpRequest) => authApi.signUp(payload),
     onSuccess: async response => {
       await tokenManager.setTokens(response);
       setAccessToken(response.accessToken);
+      setUser(response.user);
+      setVerifyToken(null);
       setAuthenticated(true);
     },
   });

@@ -1,12 +1,19 @@
-import mayaAvatar from "@/assets/images/avatars/maya-avatar-large.png";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Circle, Defs, RadialGradient, Stop } from "react-native-svg";
-import { PrimaryPressable } from "../../../src/components";
 import {
-  avatarSize,
+  PrimaryPressable,
+  SetupHeader,
+  VoiceRecordSheet,
+} from "../../../src/components";
+import { ROUTES } from "../../../src/constants/routes";
+import { showToast } from "../../../src/core/toast/toast.store";
+import { useAuthStore } from "../../../src/domain/auth/store/auth.store";
+import { mayaApi } from "../../../src/domain/maya/api/maya.api";
+import type { MayaPersonaType } from "../../../src/domain/maya/types/maya.types";
+import {
   badgeSize,
   borderRadius,
   borderWidth,
@@ -22,27 +29,29 @@ import {
 
 const glowSize = deviceWidth * 0.5;
 
-const avatarRingSize = controlHeight["3xl"];
-const avatarRingStrokeWidth = 4;
-const avatarRingRadius = (avatarRingSize - avatarRingStrokeWidth) / 2;
-const avatarRingCircumference = 2 * Math.PI * avatarRingRadius;
-const avatarRingProgress = 0.18;
-
-const PERSONA_OPTIONS = [
+const PERSONA_OPTIONS: {
+  id: string;
+  title: string;
+  subtitle: string;
+  persona: MayaPersonaType;
+}[] = [
   {
     id: "professional-calm",
     title: "Professional & Calm",
     subtitle: "Clear, steady, and confident.",
+    persona: "professional_calm",
   },
   {
     id: "friendly-conversational",
     title: "Friendly & Conversational",
     subtitle: "Warm, approachable, and natural",
+    persona: "friendly_conversational",
   },
   {
     id: "confident-direct",
     title: "Confident & Direct",
     subtitle: "Straight to the point",
+    persona: "confident_direct",
   },
 ];
 
@@ -78,6 +87,57 @@ function PersonaOptionRow({
 export default function VoicePersonaScreen() {
   const insets = useSafeAreaInsets();
   const [selectedId, setSelectedId] = useState(PERSONA_OPTIONS[0].id);
+  const [isRecordSheetVisible, setIsRecordSheetVisible] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const user = useAuthStore((state) => state.user);
+  const { initialMessage, initialOptions } = useLocalSearchParams<{
+    initialMessage?: string;
+    initialOptions?: string;
+  }>();
+  const selectedPersona = PERSONA_OPTIONS.find((option) => option.id === selectedId);
+
+  async function startRecording() {
+    if (!user || !selectedPersona) return;
+    try {
+      const response = await mayaApi.selectPersona(user.id, selectedPersona.persona);
+      if (!response.success) {
+        showToast(response.message || "Couldn't save your voice persona. Please try again.");
+        return;
+      }
+      setIsRecordSheetVisible(true);
+    } catch (error) {
+      showToast(
+        error instanceof Error && error.message
+          ? error.message
+          : "Couldn't save your voice persona. Please try again.",
+      );
+    }
+  }
+
+  async function handleSampleRecorded(uri: string) {
+    if (!user) return;
+    setIsUploading(true);
+    try {
+      const response = await mayaApi.uploadVoiceSample(user.id, uri);
+      if (!response.success) {
+        showToast(response.message || "Couldn't upload your voice sample. Please try again.");
+        return;
+      }
+      setIsRecordSheetVisible(false);
+      router.push({
+        pathname: ROUTES.trainMayaAboutYou,
+        params: { initialMessage, initialOptions },
+      });
+    } catch (error) {
+      showToast(
+        error instanceof Error && error.message
+          ? error.message
+          : "Couldn't upload your voice sample. Please try again.",
+      );
+    } finally {
+      setIsUploading(false);
+    }
+  }
 
   const containerInsetStyle = {
     paddingTop: Math.max(insets.top, spacing.lg),
@@ -113,32 +173,7 @@ export default function VoicePersonaScreen() {
 
       <View style={[styles.container, containerInsetStyle]}>
         <View style={styles.content}>
-          <View style={styles.header}>
-            <Text style={styles.title}>
-              <Text style={styles.titleMuted}>Let's</Text>, Set up Maya.
-            </Text>
-            <View style={styles.headerAvatar}>
-              <Image source={mayaAvatar} style={styles.headerAvatarImage} />
-              <Svg
-                width={avatarRingSize}
-                height={avatarRingSize}
-                style={styles.headerAvatarRing}
-              >
-                <Circle
-                  cx={avatarRingSize / 2}
-                  cy={avatarRingSize / 2}
-                  r={avatarRingRadius}
-                  stroke={colors.buttonPrimary}
-                  strokeWidth={avatarRingStrokeWidth}
-                  strokeLinecap="round"
-                  strokeDasharray={`${avatarRingCircumference * avatarRingProgress} ${avatarRingCircumference}`}
-                  fill="none"
-                  rotation="-90"
-                  origin={`${avatarRingSize / 2}, ${avatarRingSize / 2}`}
-                />
-              </Svg>
-            </View>
-          </View>
+          <SetupHeader mutedTitle="Let's" title=", Set up Maya." progress={0.18} />
 
           <View style={styles.formSection}>
             <Text style={styles.sectionLabel}>Choose your voice persona</Text>
@@ -164,14 +199,25 @@ export default function VoicePersonaScreen() {
         </View>
 
         <View style={styles.actions}>
-          <PrimaryPressable text="Let's Start Recording" onPress={() => {}} />
+          <PrimaryPressable
+            text="Let's Start Recording"
+            onPress={startRecording}
+          />
           <PrimaryPressable
             text="Maybe Later"
             appearance="outline"
-            onPress={() => router.back()}
+            onPress={() => router.dismissTo(ROUTES.dashboard)}
           />
         </View>
       </View>
+
+      <VoiceRecordSheet
+        visible={isRecordSheetVisible}
+        onClose={() => setIsRecordSheetVisible(false)}
+        onDone={(uri) => void handleSampleRecorded(uri)}
+        isUploading={isUploading}
+        sampleText="Hi, this is Robert. Feel free to reach out if you need any help."
+      />
     </View>
   );
 }
@@ -192,40 +238,6 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: spacing.md,
-  },
-  title: {
-    flex: 1,
-    fontFamily: manrope.bold,
-    fontSize: fontSize["3xl"],
-    lineHeight: lineHeight["3xl"],
-    color: colors.textPrimary,
-  },
-  titleMuted: {
-    color: colors.textSecondary,
-  },
-  headerAvatar: {
-    position: "relative",
-    justifyContent: "center",
-    alignItems: "center",
-    width: controlHeight["3xl"],
-    height: controlHeight["3xl"],
-    borderRadius: controlHeight.xl / 2,
-  },
-  headerAvatarImage: {
-    width: avatarSize.xl,
-    height: avatarSize.xl,
-    borderRadius: avatarSize.xl / 2,
-  },
-  headerAvatarRing: {
-    position: "absolute",
-    top: 0,
-    left: 0,
   },
   formSection: {
     flex: 1,

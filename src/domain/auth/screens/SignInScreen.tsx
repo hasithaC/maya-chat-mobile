@@ -94,6 +94,13 @@ export function SignInScreen() {
       const response = await requestOtp.mutateAsync({ type: channel, value });
 
       if (response.isNewUser) {
+        if (channel === "email") {
+          setEmailError(
+            "No account found with this email. Please sign up using your mobile number.",
+          );
+          return;
+        }
+
         router.push({
           pathname: "/(auth)/sign-up-otp",
           params: { identifier: value, identifierType: channel },

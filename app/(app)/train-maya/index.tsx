@@ -2,7 +2,9 @@ import { UserIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import mayaAvatar from "@/assets/images/avatars/maya-avatar-large.png";
 import { router } from "expo-router";
+import { useState } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
+import { showToast } from "../../../src/core/toast/toast.store";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Circle, Defs, RadialGradient, Stop } from "react-native-svg";
 import { PrimaryPressable } from "../../../src/components";
@@ -21,6 +23,7 @@ import {
   spacing,
 } from "../../../src/constants/tokens";
 import { useAuthStore } from "../../../src/domain/auth/store/auth.store";
+import { mayaApi } from "../../../src/domain/maya/api/maya.api";
 
 const glowSize = deviceWidth - 2 * spacing.lg;
 
@@ -42,6 +45,34 @@ export default function TrainMayaScreen() {
   const insets = useSafeAreaInsets();
   const user = useAuthStore((state) => state.user);
   const firstName = user?.fullName?.split(" ")[0] ?? "there";
+  const [isStarting, setIsStarting] = useState(false);
+
+  async function startMayaSetup() {
+    if (!user) return;
+    setIsStarting(true);
+    try {
+      const response = await mayaApi.start(user.id);
+      if (!response.success || !response.response) {
+        showToast(response.message || "Failed to start Maya. Please try again.");
+        return;
+      }
+      router.push({
+        pathname: ROUTES.trainMayaVoicePersona,
+        params: {
+          initialMessage: response.response.message,
+          initialOptions: JSON.stringify(response.response.options),
+        },
+      });
+    } catch (error) {
+      showToast(
+        error instanceof Error && error.message
+          ? error.message
+          : "Failed to start Maya. Please try again.",
+      );
+    } finally {
+      setIsStarting(false);
+    }
+  }
 
   const containerInsetStyle = {
     paddingTop: Math.max(insets.top, spacing.lg),
@@ -117,12 +148,13 @@ export default function TrainMayaScreen() {
       <View style={styles.actions}>
         <PrimaryPressable
           text="Let's Setup Maya"
-          onPress={() => router.push(ROUTES.trainMayaVoicePersona)}
+          disabled={isStarting}
+          onPress={() => void startMayaSetup()}
         />
         <PrimaryPressable
           text="Maybe Later"
           appearance="outline"
-          onPress={() => router.back()}
+          onPress={() => router.dismissTo(ROUTES.dashboard)}
         />
       </View>
     </View>

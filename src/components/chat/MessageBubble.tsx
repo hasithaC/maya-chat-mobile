@@ -27,6 +27,7 @@ interface MessageBubbleProps {
   images?: string[];
   voiceUrl?: string;
   readStatus?: MessageReadStatus;
+  children?: ReactNode;
 }
 
 function ReadStatusIcon({ status }: { status: MessageReadStatus }) {
@@ -90,6 +91,7 @@ export function MessageBubble({
   images,
   voiceUrl,
   readStatus,
+  children,
 }: MessageBubbleProps) {
   return (
     <View
@@ -103,6 +105,7 @@ export function MessageBubble({
       {voiceUrl ? <VoiceNotePlayer audioUrl={voiceUrl} /> : null}
       {images && images.length > 0 ? <MessageImageGrid images={images} /> : null}
       {text.trim().length > 0 ? renderTextWithMentions(text, styles.text) : null}
+      {children}
       {time ? (
         <View style={styles.footer}>
           <Text style={styles.time}>{time}</Text>

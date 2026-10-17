@@ -8,3 +8,5 @@ export * from './navigation';
 export * from './headers';
 export * from './cards';
 export * from './lists';
+export * from './calendar';
+export * from './voice-persona';

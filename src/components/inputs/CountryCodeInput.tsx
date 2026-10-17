@@ -103,6 +103,7 @@ export function CountryCodeInput({
         visible={visible}
         onClose={handleClose}
         title="Select Country"
+        height="80%"
       >
         <FlatList
           data={filteredCountries}

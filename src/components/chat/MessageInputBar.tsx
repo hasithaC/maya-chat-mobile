@@ -20,6 +20,7 @@ interface MessageInputBarProps {
   onCameraPress?: () => void;
   onMicPress?: () => void;
   placeholder?: string;
+  disabled?: boolean;
 }
 
 export function MessageInputBar({
@@ -29,30 +30,38 @@ export function MessageInputBar({
   onCameraPress,
   onMicPress,
   placeholder = "Type something...",
+  disabled = false,
 }: MessageInputBarProps) {
   const hasDraft = value.trim().length > 0;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, disabled && styles.disabled]}>
       <TextInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={colors.textSecondary}
         style={styles.input}
-        onSubmitEditing={hasDraft ? onSend : undefined}
+        editable={!disabled}
+        onSubmitEditing={hasDraft && !disabled ? onSend : undefined}
         returnKeyType={hasDraft ? "send" : "default"}
       />
 
-      <Pressable style={styles.iconButton} onPress={onCameraPress}>
-        <HugeiconsIcon
-          icon={Camera01Icon}
-          size={iconSize.sm}
-          color={colors.textPrimary}
-        />
-      </Pressable>
+      {onCameraPress ? (
+        <Pressable
+          style={styles.iconButton}
+          onPress={onCameraPress}
+          disabled={disabled}
+        >
+          <HugeiconsIcon
+            icon={Camera01Icon}
+            size={iconSize.sm}
+            color={colors.textPrimary}
+          />
+        </Pressable>
+      ) : null}
       {hasDraft ? (
-        <Pressable style={styles.sendButton} onPress={onSend}>
+        <Pressable style={styles.sendButton} onPress={onSend} disabled={disabled}>
           <HugeiconsIcon
             icon={Sent02Icon}
             size={iconSize.sm}
@@ -60,7 +69,11 @@ export function MessageInputBar({
           />
         </Pressable>
       ) : (
-        <Pressable style={styles.iconButton} onPress={onMicPress}>
+        <Pressable
+          style={styles.iconButton}
+          onPress={onMicPress}
+          disabled={disabled}
+        >
           <HugeiconsIcon
             icon={Mic01Icon}
             size={iconSize.sm}
@@ -84,6 +97,9 @@ const styles = StyleSheet.create({
     borderWidth: borderWidth.thin,
     borderColor: colors.border,
     backgroundColor: colors.backgroundPrimary,
+  },
+  disabled: {
+    opacity: 0.5,
   },
   input: {
     flex: 1,
