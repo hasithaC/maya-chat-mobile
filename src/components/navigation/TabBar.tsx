@@ -26,10 +26,11 @@ import {
 
 const HOME_ROUTE_NAME = "index";
 
-// Mails is unfinished for the v1.0.0 release — the route and its code stay
-// in the app, just hidden from the tab bar. Remove the name here to bring
-// it back.
-const HIDDEN_ROUTE_NAMES = ["mails"];
+// Mails and Home are unfinished/not ready for the v1.0.0 release — their
+// routes and code stay in the app, just hidden from the tab bar. Remove a
+// name here to bring that tab back. (Chats is the default landing tab
+// while Home is hidden — see initialRouteName in the tabs layout.)
+const HIDDEN_ROUTE_NAMES = ["mails", HOME_ROUTE_NAME];
 
 const TAB_ICONS: Record<string, IconSvgElement> = {
   index: Home01Icon,
@@ -106,7 +107,7 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
         })}
       </View>
 
-      {homeRoute && (
+      {homeRoute && !HIDDEN_ROUTE_NAMES.includes(HOME_ROUTE_NAME) && (
         <Pressable
           onPress={() => goToTab(homeRoute)}
           style={styles.homeContainer}

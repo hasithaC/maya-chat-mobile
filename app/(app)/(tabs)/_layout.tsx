@@ -4,6 +4,9 @@ import {TabBar} from '../../../src/components';
 export default function TabsLayout() {
   return (
     <Tabs
+      // Home is hidden from the tab bar for v1.0.0 (see TabBar's
+      // HIDDEN_ROUTE_NAMES) — Chats is the landing tab while it's out.
+      initialRouteName="chats"
       tabBar={props => <TabBar {...props} />}
       screenOptions={{headerShown: false}}
     >
