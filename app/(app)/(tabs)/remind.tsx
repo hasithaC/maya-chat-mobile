@@ -36,7 +36,6 @@ import type {
   CalendarSourceKind,
   DeviceCalendarEvent,
 } from "../../../src/domain/device-calendar/types/device-calendar.types";
-import { useTalkToMaya } from "../../../src/hooks/useTalkToMaya";
 
 interface ReminderItem {
   id: string;
@@ -183,7 +182,6 @@ function CalendarTimeline({ reminders }: { reminders: ReminderItem[] }) {
 export default function RemindScreen() {
   const insets = useSafeAreaInsets();
   const containerInsetStyle = { paddingTop: Math.max(insets.top, spacing.lg) };
-  const handleTalkToMaya = useTalkToMaya();
   const [view, setView] = useState<ReminderView>("list");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -198,7 +196,7 @@ export default function RemindScreen() {
   return (
     <View style={[styles.container, containerInsetStyle]}>
       <View style={styles.content}>
-        <TabHeader title="Reminders" onCtaPress={handleTalkToMaya} />
+        <TabHeader title="Reminders" />
         <PrimarySearchInput
           placeholder="Search for reminders"
           onSearch={() => {}}

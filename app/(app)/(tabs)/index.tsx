@@ -12,7 +12,6 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   EventListItem,
-  MayaBriefingCard,
   PrimaryPressable,
   PrimarySearchInput,
   SectionCard,
@@ -28,17 +27,15 @@ import {
   manrope,
   spacing,
 } from "../../../src/constants/tokens";
-import { useTalkToMaya } from "../../../src/hooks/useTalkToMaya";
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const containerInsetStyle = { paddingTop: Math.max(insets.top, spacing.lg) };
-  const handleTalkToMaya = useTalkToMaya();
 
   return (
     <View style={[styles.container, containerInsetStyle]}>
       <View style={styles.content}>
-        <TabHeader title="Home" onCtaPress={handleTalkToMaya} />
+        <TabHeader title="Home" />
         <PrimarySearchInput
           placeholder="Search for anything..."
           onSearch={() => {}}
@@ -50,15 +47,6 @@ export default function HomeScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <MayaBriefingCard
-          userName="Shehan"
-          upcomingEventsCount={2}
-          conferenceCallsCount={1}
-          groupCallsCount={1}
-          highPriorityTasksCount={3}
-          briefingSummary="Before you reply to investor, I've prepared a 2 mins briefing with key context."
-        />
-
         <View style={styles.statsRow}>
           <StatTile
             icon={Notification01Icon}

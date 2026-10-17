@@ -34,11 +34,13 @@ export function TabHeader({
     <View style={styles.container}>
       <Text style={styles.title}>{title}</Text>
       <View style={styles.actions}>
-        <Pressable style={styles.cta} onPress={onCtaPress}>
-          <Text style={styles.emoji}>{ctaEmoji}</Text>
-          <Text style={styles.ctaLabel}>{ctaLabel}</Text>
-          <Image source={avatarSource} style={styles.avatar} />
-        </Pressable>
+        {onCtaPress ? (
+          <Pressable style={styles.cta} onPress={onCtaPress}>
+            <Text style={styles.emoji}>{ctaEmoji}</Text>
+            <Text style={styles.ctaLabel}>{ctaLabel}</Text>
+            <Image source={avatarSource} style={styles.avatar} />
+          </Pressable>
+        ) : null}
         {trailing}
       </View>
     </View>

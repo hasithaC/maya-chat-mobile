@@ -20,7 +20,6 @@ import {
   minHitSlop,
   spacing,
 } from "../../../src/constants/tokens";
-import { useTalkToMaya } from "../../../src/hooks/useTalkToMaya";
 
 interface MailThread {
   id: string;
@@ -71,14 +70,13 @@ const THREADS: MailThread[] = [
 export default function MailsScreen() {
   const insets = useSafeAreaInsets();
   const containerInsetStyle = { paddingTop: Math.max(insets.top, spacing.lg) };
-  const handleTalkToMaya = useTalkToMaya();
   const [searchQuery, setSearchQuery] = useState("");
   const [syncBannerVisible, setSyncBannerVisible] = useState(true);
 
   return (
     <View style={[styles.container, containerInsetStyle]}>
       <View style={styles.content}>
-        <TabHeader title="Email Threads" onCtaPress={handleTalkToMaya} />
+        <TabHeader title="Email Threads" />
         <PrimarySearchInput
           placeholder="Search for threads"
           value={searchQuery}

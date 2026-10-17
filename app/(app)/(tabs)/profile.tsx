@@ -23,7 +23,6 @@ import {
 } from "../../../src/constants/tokens";
 import { ROUTES } from "../../../src/constants/routes";
 import { useAuthStore } from "../../../src/domain/auth/store/auth.store";
-import { useTalkToMaya } from "../../../src/hooks/useTalkToMaya";
 
 interface SettingsItem {
   label: string;
@@ -80,7 +79,6 @@ export default function ProfileScreen() {
   const user = useAuthStore((s) => s.user);
   const insets = useSafeAreaInsets();
   const containerInsetStyle = { paddingTop: Math.max(insets.top, spacing.lg) };
-  const handleTalkToMaya = useTalkToMaya();
   const avatarSource =
     typeof user?.avatar === "string" ? { uri: user.avatar } : undefined;
   const [searchQuery, setSearchQuery] = useState("");
@@ -106,7 +104,7 @@ export default function ProfileScreen() {
   return (
     <View style={[styles.container, containerInsetStyle]}>
       <View style={styles.content}>
-        <TabHeader title="Profile & More" onCtaPress={handleTalkToMaya} />
+        <TabHeader title="Profile & More" />
         <PrimarySearchInput
           placeholder="Search for profile, settings and more"
           value={searchQuery}

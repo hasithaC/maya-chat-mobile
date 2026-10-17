@@ -50,7 +50,6 @@ import {
 import type { Conversation } from "../../../src/domain/conversations/types/conversations.types";
 import { getConversationDisplay } from "../../../src/domain/conversations/utils/conversation-display";
 import { useFadeTransition } from "../../../src/hooks/useFadeTransition";
-import { useTalkToMaya } from "../../../src/hooks/useTalkToMaya";
 import { formatTime } from "../../../src/utils/date";
 
 type ChatFilter = "maya" | "all" | "work" | "groups";
@@ -93,7 +92,6 @@ export default function ChatsScreen() {
     isLoading: isPending,
     loadingDuration: 250,
   });
-  const handleTalkToMaya = useTalkToMaya();
   const createConversation = useCreateConversation();
   const { data: contactsData } = useContacts();
   const myContacts = contactsData?.contacts ?? [];
@@ -169,7 +167,6 @@ export default function ChatsScreen() {
       <View style={styles.content}>
         <TabHeader
           title="My Chats"
-          onCtaPress={handleTalkToMaya}
           trailing={
             <Pressable
               style={styles.newButton}

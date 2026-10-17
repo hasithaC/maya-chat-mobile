@@ -26,6 +26,11 @@ import {
 
 const HOME_ROUTE_NAME = "index";
 
+// Mails is unfinished for the v1.0.0 release — the route and its code stay
+// in the app, just hidden from the tab bar. Remove the name here to bring
+// it back.
+const HIDDEN_ROUTE_NAMES = ["mails"];
+
 const TAB_ICONS: Record<string, IconSvgElement> = {
   index: Home01Icon,
   profile: UserCircleIcon,
@@ -43,7 +48,9 @@ export function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   );
   const homeRoute: Route<string> | undefined = state.routes[homeIndex];
   const otherRoutes = state.routes.filter(
-    (route) => route.name !== HOME_ROUTE_NAME,
+    (route) =>
+      route.name !== HOME_ROUTE_NAME &&
+      !HIDDEN_ROUTE_NAMES.includes(route.name),
   );
 
   const goToTab = (route: Route<string>) => {

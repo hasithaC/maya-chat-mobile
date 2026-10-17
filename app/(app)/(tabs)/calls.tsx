@@ -23,7 +23,6 @@ import { useAuthStore } from "../../../src/domain/auth/store/auth.store";
 import { useCallHistory } from "../../../src/domain/calls/hooks/calls.hooks";
 import type { CallHistory } from "../../../src/domain/calls/types/calls.types";
 import { useContacts } from "../../../src/domain/contacts/hooks/contacts.hooks";
-import { useTalkToMaya } from "../../../src/hooks/useTalkToMaya";
 
 interface CallLogItem {
   id: string;
@@ -149,7 +148,6 @@ function matchesFilter(call: CallLogItem, filter: CallFilter): boolean {
 export default function CallsScreen() {
   const insets = useSafeAreaInsets();
   const containerInsetStyle = { paddingTop: Math.max(insets.top, spacing.lg) };
-  const handleTalkToMaya = useTalkToMaya();
   const [filter, setFilter] = useState<CallFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const { data: contactsData } = useContacts();
@@ -193,7 +191,7 @@ export default function CallsScreen() {
   return (
     <View style={[styles.container, containerInsetStyle]}>
       <View style={styles.content}>
-        <TabHeader title="Calls" onCtaPress={handleTalkToMaya} />
+        <TabHeader title="Calls" />
         <PrimarySearchInput
           placeholder="Search for calls"
           value={searchQuery}
