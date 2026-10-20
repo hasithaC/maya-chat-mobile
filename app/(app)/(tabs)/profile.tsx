@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
+  ConfirmationSheet,
   NoSearchResults,
   PrimarySearchInput,
   ProfileSummaryCard,
@@ -37,7 +38,10 @@ interface SettingsSection {
   items: SettingsItem[];
 }
 
-function getSections(logout: () => void): SettingsSection[] {
+function getSections(
+  logout: () => void,
+  onDeleteAccountPress: () => void,
+): SettingsSection[] {
   return [
     {
       label: "Connectors",
@@ -52,7 +56,7 @@ function getSections(logout: () => void): SettingsSection[] {
         { label: "Change Phone Number", disabled: true },
         { label: "Two-factor Authentication", disabled: true },
         { label: "Logout", onPress: logout },
-        { label: "Delete My Account" },
+        { label: "Delete My Account", onPress: onDeleteAccountPress },
       ],
     },
     {
@@ -82,9 +86,13 @@ export default function ProfileScreen() {
   const avatarSource =
     typeof user?.avatar === "string" ? { uri: user.avatar } : undefined;
   const [searchQuery, setSearchQuery] = useState("");
+  const [isDeleteSheetVisible, setIsDeleteSheetVisible] = useState(false);
 
   const query = searchQuery.trim().toLowerCase();
-  const sections = useMemo(() => getSections(logout), [logout]);
+  const sections = useMemo(
+    () => getSections(logout, () => setIsDeleteSheetVisible(true)),
+    [logout],
+  );
   const filteredSections = useMemo(() => {
     if (!query) return sections;
 
@@ -152,6 +160,18 @@ export default function ProfileScreen() {
           ))
         )}
       </ScrollView>
+
+      <ConfirmationSheet
+        visible={isDeleteSheetVisible}
+        onClose={() => setIsDeleteSheetVisible(false)}
+        // TODO: replace with the real delete-account API call once it
+        // exists — for now this just signs the user out, same as Logout.
+        onConfirm={logout}
+        title="Delete Your Account?"
+        description="This will permanently delete your account and all your data. This action can't be undone."
+        confirmLabel="Delete Account"
+        cancelLabel="Cancel"
+      />
     </View>
   );
 }
