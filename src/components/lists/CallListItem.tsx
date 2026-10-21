@@ -33,6 +33,8 @@ interface CallListItemProps {
   onViewSummary?: () => void;
   onIgnore?: () => void;
   onCallBack?: () => void;
+  // Fired when the row itself (avatar/name) is tapped — e.g. to redial.
+  onPress?: () => void;
 }
 
 const DIRECTION_LABEL: Record<CallDirection, string> = {
@@ -51,13 +53,14 @@ export function CallListItem({
   onViewSummary,
   onIgnore,
   onCallBack,
+  onPress,
 }: CallListItemProps) {
   const isMissed = direction === "missed";
   const avatarColor = getAvatarColor(id != null ? String(id) : title);
 
   return (
     <View style={[styles.container, showDivider && styles.divider]}>
-      <View style={styles.row}>
+      <Pressable style={styles.row} onPress={onPress} disabled={!onPress}>
         <View style={styles.avatarWrapper}>
           {avatarSource ? (
             <Image source={avatarSource} style={styles.avatarImage} />
@@ -96,7 +99,7 @@ export function CallListItem({
             {DIRECTION_LABEL[direction]}
           </Text>
         </View>
-      </View>
+      </Pressable>
       {isMissed ? (
         <View style={styles.actions}>
           <View style={styles.actionButton}>

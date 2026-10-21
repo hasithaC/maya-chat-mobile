@@ -33,6 +33,7 @@ import {
   spacing,
 } from "../../../src/constants/tokens";
 import { useCallSummary } from "../../../src/domain/calls/hooks/calls.hooks";
+import { voiceService } from "../../../src/domain/calls/services/voice.service";
 import { useCallSummaryActionDispatch } from "../../../src/domain/calls/hooks/useCallSummaryActionDispatch";
 import type {
   CallSummaryAction,
@@ -44,12 +45,14 @@ import { formatEventDateTime } from "../../../src/utils/date";
 function ActionPillButton({
   icon,
   label,
+  onPress,
 }: {
   icon: IconSvgElement;
   label: string;
+  onPress?: () => void;
 }) {
   return (
-    <Pressable style={styles.pillButton}>
+    <Pressable style={styles.pillButton} onPress={onPress}>
       <HugeiconsIcon icon={icon} size={iconSize.sm} color={colors.textAccent} />
       <Text style={styles.pillButtonText}>{label}</Text>
     </Pressable>
@@ -196,7 +199,20 @@ export default function CallSummaryScreen() {
 
       <View style={styles.actionsRow}>
         <ActionPillButton icon={Chatting01Icon} label="Chat" />
-        <ActionPillButton icon={Call02Icon} label="Audio" />
+        <ActionPillButton
+          icon={Call02Icon}
+          label="Audio"
+          onPress={
+            otherUserId
+              ? () =>
+                  voiceService.startCall({
+                    id: otherUserId,
+                    name: title || "Unknown",
+                    avatarUrl,
+                  })
+              : undefined
+          }
+        />
         <ActionPillButton icon={Video01Icon} label="Video" />
       </View>
 

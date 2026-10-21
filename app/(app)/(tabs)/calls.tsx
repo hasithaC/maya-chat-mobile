@@ -21,6 +21,7 @@ import {
 } from "../../../src/constants/tokens";
 import { useAuthStore } from "../../../src/domain/auth/store/auth.store";
 import { useCallHistory } from "../../../src/domain/calls/hooks/calls.hooks";
+import { voiceService } from "../../../src/domain/calls/services/voice.service";
 import type { CallHistory } from "../../../src/domain/calls/types/calls.types";
 import { useContacts } from "../../../src/domain/contacts/hooks/contacts.hooks";
 import { useTalkToMaya } from "../../../src/hooks/useTalkToMaya";
@@ -230,6 +231,20 @@ export default function CallsScreen() {
               time={call.time}
               avatarSource={call.avatarSource}
               showDivider={index < filteredCalls.length - 1}
+              onPress={() =>
+                voiceService.startCall({
+                  id: call.otherUserId,
+                  name: call.title,
+                  avatarUrl: call.avatarUrl,
+                })
+              }
+              onCallBack={() =>
+                voiceService.startCall({
+                  id: call.otherUserId,
+                  name: call.title,
+                  avatarUrl: call.avatarUrl,
+                })
+              }
               onViewSummary={() =>
                 router.push({
                   pathname: "/(app)/call-summary/[id]",
@@ -265,6 +280,13 @@ export default function CallsScreen() {
                       : undefined
                   }
                   showDivider={index < filteredContacts.length - 1}
+                  onPress={() =>
+                    voiceService.startCall({
+                      id: String(contact.contactUserId),
+                      name: contact.displayName || contact.contactUser.fullName,
+                      avatarUrl: contact.contactUser.avatar || undefined,
+                    })
+                  }
                 />
               ))}
             </View>

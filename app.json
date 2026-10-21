@@ -15,7 +15,8 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.hasithac.mayachatmobile"
+      "bundleIdentifier": "com.aecendir.maya",
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "adaptiveIcon": {
@@ -26,7 +27,8 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
-      "package": "com.hasithac.mayachatmobile"
+      "package": "com.aecendir.maya",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -48,6 +50,13 @@
         "expo-calendar",
         {
           "calendarPermission": "Allow $(PRODUCT_NAME) to access your calendars to show your events in Reminders."
+        }
+      ],
+      [
+        "@twilio/voice-react-native-sdk",
+        {
+          "apsEnvironment": "development",
+          "microphoneUsageDescription": "Allow $(PRODUCT_NAME) to access your microphone for voice calls."
         }
       ]
     ]

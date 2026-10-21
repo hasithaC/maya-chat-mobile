@@ -10,3 +10,4 @@ export * from './cards';
 export * from './lists';
 export * from './calendar';
 export * from './voice-persona';
+export * from './call';

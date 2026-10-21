@@ -25,7 +25,7 @@ apiClient.interceptors.request.use(config => {
   if (__DEV__) {
     console.log('[API REQUEST]', {
       method: config.method,
-      url: (config.baseURL || '') + (config.url || ''),
+      url: apiClient.getUri(config),
       headers: config.headers,
       params: config.params,
       data: config.data,
@@ -38,7 +38,7 @@ apiClient.interceptors.response.use(
   res => {
     if (__DEV__) {
       console.log('[API RESPONSE]', {
-        url: (res.config.baseURL || '') + (res.config.url || ''),
+        url: apiClient.getUri(res.config),
         method: res.config.method,
         status: res.status,
         data: res.data,
@@ -55,7 +55,7 @@ apiClient.interceptors.response.use(
   async (error: AxiosError) => {
     if (__DEV__) {
       console.error('[API ERROR]', {
-        url: (error.config?.baseURL || '') + (error.config?.url || ''),
+        url: error.config ? apiClient.getUri(error.config) : undefined,
         method: error.config?.method,
         status: error.response?.status,
         data: error.response?.data,

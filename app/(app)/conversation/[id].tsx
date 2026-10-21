@@ -1,4 +1,4 @@
-import { MoreVerticalIcon } from "@hugeicons/core-free-icons";
+import { Call02Icon, MoreVerticalIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react-native";
 import mayaAvatar from "@/assets/images/avatars/maya-avatar.png";
 import emptyThreadImage from "@/assets/images/states/empty-conversation-thread.png";
@@ -38,16 +38,17 @@ import {
   borderRadius,
   borderWidth,
   colors,
+  controlHeight,
   fontSize,
   geist,
   iconSize,
   lineHeight,
-  minHitSlop,
   spacing,
 } from "../../../src/constants/tokens";
 import { ROUTES } from "../../../src/constants/routes";
 import { useAuthStore } from "../../../src/domain/auth/store/auth.store";
 import { useCallSummaryActionDispatch } from "../../../src/domain/calls/hooks/useCallSummaryActionDispatch";
+import { voiceService } from "../../../src/domain/calls/services/voice.service";
 import {
   useConversation,
   useConversationMessages,
@@ -383,8 +384,22 @@ export default function ConversationScreen() {
       const status =
         typeof ack.status === "string" ? ack.status : undefined;
 
-      queryClient.setQueryData<ConversationMessage[]>(messagesQueryKey, (old) =>
-        (old ?? []).map((message) =>
+      queryClient.setQueryData<ConversationMessage[]>(messagesQueryKey, (old) => {
+        const existing = old ?? [];
+        // If the real message already landed (e.g. echoed back over
+        // receive_message/maya_response), drop the optimistic copy instead
+        // of renaming it to the same id and rendering it twice.
+        const alreadyHasReal =
+          knownId !== resolvedId &&
+          existing.some(
+            (m) =>
+              m.id === resolvedId &&
+              String(m.senderId) === String(currentUserId),
+          );
+        const deduped = alreadyHasReal
+          ? existing.filter((m) => m.id !== knownId)
+          : existing;
+        return deduped.map((message) =>
           message.id === knownId || message.id === resolvedId
             ? {
                 ...message,
@@ -396,8 +411,8 @@ export default function ConversationScreen() {
                     : message.readAt,
               }
             : message,
-        ),
-      );
+        );
+      });
 
       // The server appears to re-emit 'message_ack' for the same tempId as
       // the message moves through SENT/DELIVERED/READ, so keep the mapping
@@ -424,7 +439,8 @@ export default function ConversationScreen() {
       if (String(message.conversationId) !== id) return;
       // Our own sent messages are reconciled via message_ack instead, so we
       // don't end up with both an optimistic bubble and a duplicate real one.
-      if (message.senderId === currentUserId) return;
+      // Compare as strings — the server can send senderId as a number.
+      if (String(message.senderId) === String(currentUserId)) return;
 
       queryClient.setQueryData<ConversationMessage[]>(messagesQueryKey, (old) => {
         const existing = old ?? [];
@@ -442,6 +458,8 @@ export default function ConversationScreen() {
     const handleMayaResponse = (data: MayaResponsePayload) => {
       const message = data.response;
       if (String(data.conversationId) !== id) return;
+      // Our own message is reconciled via message_ack, not appended here.
+      if (String(message.senderId) === String(currentUserId)) return;
 
       queryClient.setQueryData<ConversationMessage[]>(messagesQueryKey, (old) => {
         const existing = old ?? [];
@@ -782,6 +800,7 @@ export default function ConversationScreen() {
   const header = conversation
     ? getConversationDisplay(conversation, currentUserId, contactNameByUserId)
     : { title: "Chat", avatarSource: undefined };
+  const otherParticipantId = header.otherParticipantId;
 
   const participantsById = useMemo(() => {
     const map = new Map<
@@ -803,9 +822,22 @@ export default function ConversationScreen() {
     return map;
   }, [conversation, currentUserId]);
 
+  // The backend persists every Maya turn twice: the Maya service writes its
+  // own copies tagged metadata.source ("user"/"maya") alongside the chat
+  // service's originals, so the history endpoint returns each message twice.
+  // Keep the originals — they're what message_ack/maya_response resolve to,
+  // and Maya's original carries metadata.ai.actions.
+  const visibleMessages = useMemo(
+    () =>
+      isMayaConversation
+        ? (messages ?? []).filter((message) => !message.metadata?.source)
+        : (messages ?? []),
+    [messages, isMayaConversation],
+  );
+
   const segments = useMemo(
-    () => buildSegments(messages ?? [], currentUserId),
-    [messages, currentUserId],
+    () => buildSegments(visibleMessages, currentUserId),
+    [visibleMessages, currentUserId],
   );
 
   const renderSegment = useCallback(
@@ -870,13 +902,40 @@ export default function ConversationScreen() {
             }
             loading={isConversationPending}
             trailing={
-              <Pressable style={styles.moreButton} hitSlop={minHitSlop}>
-                <HugeiconsIcon
-                  icon={MoreVerticalIcon}
-                  size={iconSize.md}
-                  color={colors.textPrimary}
-                />
-              </Pressable>
+              <View style={styles.headerActions}>
+                {otherParticipantId && !isMayaConversation ? (
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.callButton,
+                      pressed && { opacity: 0.6 },
+                    ]}
+                    hitSlop={spacing.sm}
+                    accessibilityLabel="Voice call"
+                    onPress={() =>
+                      voiceService.startCall({
+                        id: otherParticipantId,
+                        name: header.title,
+                        avatarUrl: header.avatarUrl,
+                      })
+                    }
+                  >
+                    <HugeiconsIcon
+                      icon={Call02Icon}
+                      size={iconSize.md}
+                      color={colors.textPrimary}
+                    />
+                  </Pressable>
+                ) : null}
+                {/* A small hitSlop: minHitSlop (44pt on every side) would reach
+                    over the call button beside it and swallow its taps. */}
+                <Pressable hitSlop={spacing.sm}>
+                  <HugeiconsIcon
+                    icon={MoreVerticalIcon}
+                    size={iconSize.md}
+                    color={colors.textPrimary}
+                  />
+                </Pressable>
+              </View>
             }
           />
         </View>
@@ -941,8 +1000,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.backgroundPrimary,
   },
-  moreButton: {
+  headerActions: {
     marginLeft: "auto",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  callButton: {
+    width: controlHeight.xs,
+    height: controlHeight.xs,
+    borderRadius: controlHeight.xs / 2,
+    backgroundColor: colors.backgroundSecondary,
+    alignItems: "center",
+    justifyContent: "center",
   },
   keyboardView: {
     flex: 1,

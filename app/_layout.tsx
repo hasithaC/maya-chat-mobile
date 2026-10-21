@@ -20,6 +20,8 @@ import * as SplashScreen from 'expo-splash-screen';
 import {StatusBar} from 'expo-status-bar';
 import {useEffect, useState} from 'react';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
+import {CallBannerLayout} from '../src/components/call/CallBanner';
+import {CallScreen} from '../src/components/call/CallScreen';
 import {ToastHost} from '../src/components/overlays/Toast';
 import {authEvents} from '../src/core/auth/auth-events';
 import {tokenManager} from '../src/core/auth/token-manager';
@@ -32,6 +34,7 @@ import {
 import {useChatSocketConnection} from '../src/core/socket/useChatSocketConnection';
 import {authApi} from '../src/domain/auth/api/auth.api';
 import {useAuthStore} from '../src/domain/auth/store/auth.store';
+import {useVoiceRegistration} from '../src/domain/calls/hooks/useVoiceRegistration';
 import type {Conversation} from '../src/domain/conversations/types/conversations.types';
 
 SplashScreen.preventAutoHideAsync();
@@ -78,6 +81,11 @@ function ChatSocketBridge() {
     return () => offConversationUpdated(handleConversationUpdated);
   }, [queryClient]);
 
+  return null;
+}
+
+function VoiceBridge() {
+  useVoiceRegistration();
   return null;
 }
 
@@ -133,7 +141,11 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <ForceLogoutBridge />
         <ChatSocketBridge />
-        <Stack screenOptions={{headerShown: false}} />
+        <VoiceBridge />
+        <CallBannerLayout>
+          <Stack screenOptions={{headerShown: false}} />
+        </CallBannerLayout>
+        <CallScreen />
         <ToastHost />
         <StatusBar style="auto" />
       </QueryClientProvider>

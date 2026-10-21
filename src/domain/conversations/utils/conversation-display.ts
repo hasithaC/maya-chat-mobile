@@ -5,6 +5,8 @@ import type { Conversation } from "../types/conversations.types";
 export interface ConversationDisplay {
   title: string;
   avatarSource?: ImageSourcePropType;
+  // Remote photo URL of the other participant in a direct chat.
+  avatarUrl?: string;
   otherParticipantId?: string;
 }
 
@@ -37,13 +39,15 @@ export function getConversationDisplay(
   }
 
   const savedName = other && contactNameByUserId?.get(other.userId);
+  const avatarUrl =
+    other && typeof other.user.avatar === "string"
+      ? other.user.avatar
+      : undefined;
 
   return {
     title: savedName || other?.user.fullName || "Unknown",
-    avatarSource:
-      other && typeof other.user.avatar === "string"
-        ? { uri: other.user.avatar }
-        : undefined,
+    avatarSource: avatarUrl ? { uri: avatarUrl } : undefined,
+    avatarUrl,
     otherParticipantId: other?.userId,
   };
 }

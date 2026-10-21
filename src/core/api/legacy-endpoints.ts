@@ -24,15 +24,6 @@ export const LEGACY_ENDPOINTS = {
     PRESIGN_VOICE_NOTE_UPLOAD: `/api/v1/messages/voice-notes/presign-upload`,
     PRESIGN_ATTACHMENT_UPLOAD: `/api/v1/messages/attachments/presign-upload`,
   },
-  CALL: {
-    HISTORY: `/api/v1/voice/calls/history`,
-    VOICE_TOKEN: `/api/v1/voice/token`,
-    INITIATE: '/api/v1/voice/calls/initiate',
-    ACCEPT: (callId: string) => `/api/v1/voice/calls/${callId}/accept`,
-    REJECT: (callId: string) => `/api/v1/voice/calls/${callId}/reject`,
-    END: (callId: string) => `/api/v1/voice/calls/${callId}/end`,
-    UPDATE_SID: (callId: string) => `/api/v1/voice/calls/${callId}/twilio-sid`,
-  },
   FILE_UPLOAD: `${API_BASE_URL}/api/Storage/UploadFilev2`,
   TEMP_FILE_DOWNLOAD: `/api/v1/messages/attachments/presign-download`,
 };
